@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {RewardsDistributor} from "../../src/RewardsDistributor.sol";
 import "../mocks/MockERC20.sol";
 
@@ -9,15 +9,15 @@ contract RewardsDistributorUnitTest is Test {
     RewardsDistributor rewardsDistributor;
     MockERC20 mockToken;
 
-    address owner;
+    address manager;
     address tokenAddress;
     string name;
 
     function setUp() public {
-        owner = address(this);
+        manager = address(this);
         tokenAddress = address(this);
         name = "Test Rewards Distributor";
-        rewardsDistributor = new RewardsDistributor(owner, tokenAddress, name);
+        rewardsDistributor = new RewardsDistributor(manager, tokenAddress, name);
     }
 
     function test_InitialValues() public {
@@ -30,7 +30,6 @@ contract RewardsDistributorUnitTest is Test {
     function test_SetShouldFailPayout() public {
         rewardsDistributor.setShouldFailPayout(true);
         assertTrue(rewardsDistributor.shouldFailPayout(), "shouldFailPayout should be true after setting");
-
         rewardsDistributor.setShouldFailPayout(false);
         assertFalse(rewardsDistributor.shouldFailPayout(), "shouldFailPayout should be false after setting");
     }
