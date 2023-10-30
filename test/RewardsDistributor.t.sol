@@ -2,8 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
-import {RewardsDistributor} from "../../src/RewardsDistributor.sol";
-import "../mocks/MockERC20.sol";
+import {RewardsDistributor} from "../src/RewardsDistributor.sol";
+import "./mocks/MockERC20.sol";
 
 contract RewardsDistributorUnitTest is Test {
     RewardsDistributor rewardsDistributor;
