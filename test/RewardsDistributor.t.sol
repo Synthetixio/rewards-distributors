@@ -21,7 +21,6 @@ contract RewardsDistributorUnitTest is Test {
     }
 
     function test_InitialValues() public {
-        // Rewards Distributor
         assertEq(rewardsDistributor.token(), tokenAddress, "Token address is not set correctly");
         assertEq(rewardsDistributor.name(), name, "Name is not set correctly");
         assertFalse(rewardsDistributor.shouldFailPayout(), "shouldFailPayout should initially be false");
