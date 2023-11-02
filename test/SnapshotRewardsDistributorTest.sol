@@ -6,11 +6,12 @@ import "forge-std/console.sol";
 import "cannon-std/Cannon.sol";
 
 import "../src/SnapshotRewardsDistributor.sol";
+import "../src/interfaces/ISynthetixCore.sol";
 
 contract SynthetixSafeModuleTest is Test {
     using Cannon for Vm;
 
-    ISynthetixV3 system;
+    ISynthetixCore system;
 		SnapshotRewardsDistributor rewardsDistributor;
 
     function setUp() public {
