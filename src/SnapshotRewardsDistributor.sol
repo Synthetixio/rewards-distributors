@@ -55,7 +55,7 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
 		 */
 		mapping(address => PeriodAccounts[]) ownerToAccountId;
 
-		uint128 currentPeriodId;
+		uint128 public currentPeriodId;
 		
     uint internal constant MAX_PERIOD_ITERATE = 30;
 

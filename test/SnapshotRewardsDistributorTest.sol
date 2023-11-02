@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 import "cannon-std/Cannon.sol";
 
 import "../src/SnapshotRewardsDistributor.sol";
-import "../src/interfaces/ISynthetixCore.sol";
+import {ISynthetixCore} from "../src/interfaces/ISynthetixCore.sol";
 
 contract SynthetixSafeModuleTest is Test {
     using Cannon for Vm;
@@ -15,7 +15,7 @@ contract SynthetixSafeModuleTest is Test {
 		SnapshotRewardsDistributor rewardsDistributor;
 
     function setUp() public {
-				system = SnapshotRewardsDistributor(vm.getAddress("system.CoreProxy"));
+				system = ISynthetixCore(vm.getAddress("synthetix.CoreProxy"));
         rewardsDistributor = SnapshotRewardsDistributor(vm.getAddress("RewardsDistributor"));
     }
 
