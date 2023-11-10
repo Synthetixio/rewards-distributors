@@ -10,10 +10,8 @@ defaultValue = "synthetix:latest"
 defaultValue = "main"
 
 [setting.servicePoolId]
-defaultValue = "1"
 
 [setting.serviceCollateralAddress]
-defaultValue = "<%= AddressZero %>"
 
 [setting.snapper]
 defaultValue = "<%= AddressZero %>"

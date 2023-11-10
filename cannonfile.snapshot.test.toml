@@ -1,0 +1,74 @@
+name = "test-rds"
+version = "1"
+
+[setting.test_user]
+defaultValue = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" # PK 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+description = "Hardhat/Anvil second test account"
+
+[provision.ssr]
+source = "synthetix-snapshot-rewards"
+options.snapper = "0x34A1D3fff3958843C43aD80F30b94c510645C316"
+options.servicePoolId = "1"
+options.serviceCollateralAddress = "<%= imports.token.contracts.MintableToken.address %>"
+
+[import.token]
+source = "mintable-token"
+
+[invoke.configure_collateral]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "configureCollateral"
+args = [
+    { tokenAddress = "<%= imports.token.contracts.MintableToken.address %>", oracleNodeId = "<%= imports.ssr.imports.synthetix.extras.const_one_oracle_id %>", issuanceRatioD18 = "<%= parseEther('2') %>", liquidationRatioD18 = "<%= parseEther('1.5') %>", liquidationRewardD18 = "<%= parseEther('1') %>", minDelegationD18 = "<%= parseEther('1') %>", depositingEnabled = true },
+]
+
+[invoke.permit_owner_to_register_markets]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('registerMarket') %>", true]
+
+[invoke.permit_delegate_collateral]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('delegateCollateral') %>", true]
+
+
+[invoke.permit_create_pool]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('createPool') %>", true]
+
+[invoke.permit_deposit]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('deposit') %>", true]
+
+[invoke.create_pool]
+target = ["ssr.synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "createPool"
+args = [1, "<%= settings.test_user %>"]
+depends = ["invoke.permit_create_pool"]
+
+[invoke.associate_recorder]
+target = ["ssr.synthetix.CoreProxy"]
+from = "<%= settings.test_user %>"
+func = "registerRewardsDistributor"
+args = [1, "<%= imports.token.contracts.MintableToken.address %>", "<%= imports.ssr.contracts.RewardsDistributor.address %>"]
+depends = ["invoke.create_pool"]
+
+[invoke.mint]
+target = ["token.MintableToken"]
+from = "<%= settings.test_user %>"
+func = "mint"
+args = ["<%= parseEther('10000') %>", "<%= settings.test_user %>"]
+
+[invoke.send]
+target = ["token.MintableToken"]
+from = "<%= settings.test_user %>"
+func = "transfer"
+args = ["0x34A1D3fff3958843C43aD80F30b94c510645C316", "<%= parseEther('10000') %>"]
