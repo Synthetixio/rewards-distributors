@@ -14,6 +14,7 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
     using Cannon for Vm;
 
     ISynthetixCore system;
+		IERC721 accountToken;
 		SnapshotRewardsDistributor rewardsDistributor;
 		address collateralAddress;
 
@@ -22,6 +23,7 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
 
     function setUp() public {
 				system = ISynthetixCore(vm.getAddress("ssr.synthetix.CoreProxy"));
+				accountToken = IERC721(vm.getAddress("ssr.synthetix.AccountProxy"));
         rewardsDistributor = SnapshotRewardsDistributor(vm.getAddress("ssr.RewardsDistributor"));
 				collateralAddress = vm.getAddress("token.MintableToken");
     }
@@ -66,12 +68,28 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
 		}
 
 		function testTransferAccount() public {
-				
-		}
+				system.createAccount(accountId);
 
-		function testRemoveUserStake() public {
-		}
+				IERC20(collateralAddress).approve(address(system), type(uint).max);
 
+				system.deposit(accountId, collateralAddress, depositAmount);
+				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
+
+				assert(rewardsDistributor.totalSupply() == depositAmount);
+				assert(rewardsDistributor.balanceOf(accountId) == depositAmount);
+				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
+
+				accountToken.transferFrom(address(this), address(0x1), accountId);
+
+				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
+
+				vm.prank(address(0x1));
+				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
+
+				assert(rewardsDistributor.totalSupply() == depositAmount / 2);
+				assert(rewardsDistributor.balanceOf(address(this)) == 0);
+				assert(rewardsDistributor.balanceOf(address(0x1)) == depositAmount / 2);
+		}
 		
     function onERC721Received(
         address operator,

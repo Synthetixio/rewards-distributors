@@ -26,12 +26,8 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     struct PeriodBalance {
         uint128 amount;
         uint128 periodId;
+				address owner;
     }
-
-		struct PeriodAccounts {
-				uint128 periodId;
-				uint128[] accountIds;
-		}
 
     /**
      * Addresses selected by owner which are allowed to call `takeSnapshot`
@@ -58,7 +54,7 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
 		/**
 		 * Records the latest address to which account it is part of
 		 */
-		mapping(address => PeriodAccounts[]) ownerToAccountId;
+		mapping(address => PeriodBalance[]) accountBalances;
 
 		uint128 public currentPeriodId;
 		
@@ -85,71 +81,55 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
 					revert IncorrectCollateralType(collateralType, serviceCollateralType);
 				}
 
-				console.log("eight");
-
+				// get current account information
 				uint256 newAmount = ISynthetixCore(address(rewardsManager)).getPositionCollateral(accountId, poolId, collateralType);
-
-				console.log("nine");
-
 				address account = accountToken.ownerOf(accountId);
 
-        uint ownerAccountRecordsCount = ownerToAccountId[account].length;
+				// ensure periods for all the values we will be updating are correct
+				uint256 idIdx = updatePeriod(balances[accountId]);
+				uint256 oldAccountIdx = updatePeriod(accountBalances[balances[accountId][idIdx].owner]);
+				uint256 accountIdx = updatePeriod(accountBalances[account]);
 
-				console.log("a");
+				uint256 prevBalance = balances[accountId][accountIdx].amount;
 
-        if (ownerAccountRecordsCount == 0 || ownerToAccountId[account][ownerAccountRecordsCount - 1].periodId != currentPeriodId) {
-            ownerToAccountId[account].push();
-						ownerToAccountId[account][ownerAccountRecordsCount].periodId = currentPeriodId;
-						ownerAccountRecordsCount++;
-				}
+				// subtract balance from previous owner
+				accountBalances[balances[accountId][idIdx].owner][oldAccountIdx].amount -= uint128(prevBalance);
 
-				console.log("b");
-
-				bool found = false;
-				for (uint i = 0;i < ownerToAccountId[account][ownerAccountRecordsCount - 1].accountIds.length;i++) {
-						found = found || ownerToAccountId[account][ownerAccountRecordsCount - 1].accountIds[i] == accountId;
-				}
-
-				console.log("c");
-
-				if (!found) {
-						ownerToAccountId[account][ownerAccountRecordsCount - 1].accountIds.push(accountId);
-				}
+				// add balance to new owner
+				accountBalances[account][accountIdx].amount += uint128(newAmount);
 				
-				console.log("d");
+				// update account id record
+				balances[accountId][idIdx].amount = uint128(newAmount);
+				balances[accountId][idIdx].owner = account;
 
-        uint accountBalanceCount = balances[accountId].length;
-
-				uint prevBalance = 0;
-        if (accountBalanceCount == 0) {
-            balances[accountId].push(PeriodBalance(uint128(newAmount), uint128(currentPeriodId)));
-        } else {
-						prevBalance = balances[accountId][accountBalanceCount - 1].amount;
-            if (balances[accountId][accountBalanceCount - 1].periodId != currentPeriodId) {
-                balances[accountId].push(PeriodBalance(uint128(newAmount), currentPeriodId));
-            } else {
-                balances[accountId][accountBalanceCount - 1].amount = uint128(newAmount);
-            }
-        }
-
-				console.log("CHANGING TOTAL SUPPLY", totalSupplyOnPeriod[currentPeriodId]);
         totalSupplyOnPeriod[currentPeriodId] = totalSupplyOnPeriod[currentPeriodId] + newAmount - prevBalance;
     }
+
+		function updatePeriod(PeriodBalance[] storage bals) internal returns (uint256) {
+			uint balanceCount = bals.length;
+			if (balanceCount == 0 || bals[balanceCount - 1].periodId != currentPeriodId) {
+					bals.push(PeriodBalance(0, uint128(currentPeriodId), address(0)));
+
+					if (balanceCount > 0) {
+							bals[balanceCount].amount = bals[balanceCount - 1].amount;
+							bals[balanceCount].owner = bals[balanceCount - 1].owner;
+					}
+
+					balanceCount++; 
+			}
+
+			return balanceCount - 1;
+		}
 		
 		function balanceOfOnPeriod(address account, uint periodId) public view returns (uint) {
-        uint accountPeriodHistoryCount = ownerToAccountId[account].length;
+        uint accountPeriodHistoryCount = accountBalances[account].length;
 
         int oldestHistoryIterate =
             int(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
         int i;
         for (i = int(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
-            if (ownerToAccountId[account][uint(i)].periodId <= periodId) {
-								uint128[] storage accountIds = ownerToAccountId[account][uint(i)].accountIds;
-								uint totalBalances;
-								for (uint j = 0;j < accountIds.length;j++) {
-										totalBalances += balanceOfOnPeriod(accountIds[j], periodId);
-								}
-                return totalBalances;
+            if (accountBalances[account][uint(i)].periodId <= periodId) {
+                return uint(accountBalances[account][uint(i)].amount);
             }
         }
 
