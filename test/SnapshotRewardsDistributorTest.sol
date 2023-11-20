@@ -14,89 +14,87 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
     using Cannon for Vm;
 
     ISynthetixCore system;
-		IERC721 accountToken;
-		SnapshotRewardsDistributor rewardsDistributor;
-		address collateralAddress;
+    IERC721 accountToken;
+    SnapshotRewardsDistributor rewardsDistributor;
+    address collateralAddress;
 
-		uint128 constant accountId = 1234;
-		uint256 depositAmount = 1000 * 1e18;
+    uint128 constant accountId = 1234;
+    uint256 depositAmount = 1000 * 1e18;
 
     function setUp() public {
-				system = ISynthetixCore(vm.getAddress("ssr.synthetix.CoreProxy"));
-				accountToken = IERC721(vm.getAddress("ssr.synthetix.AccountProxy"));
+        system = ISynthetixCore(vm.getAddress("ssr.synthetix.CoreProxy"));
+        accountToken = IERC721(vm.getAddress("ssr.synthetix.AccountProxy"));
         rewardsDistributor = SnapshotRewardsDistributor(vm.getAddress("ssr.RewardsDistributor"));
-				collateralAddress = vm.getAddress("token.MintableToken");
+        collateralAddress = vm.getAddress("token.MintableToken");
     }
 
     function testInitialState() public view {
         assert(rewardsDistributor.currentPeriodId() == 0);
-				assert(rewardsDistributor.servicePoolId() == 1);
-				assert(rewardsDistributor.serviceCollateralType() == collateralAddress);
+        assert(rewardsDistributor.servicePoolId() == 1);
+        assert(rewardsDistributor.serviceCollateralType() == collateralAddress);
     }
 
-		function testRecordsWhenUserStakes() public {
-				system.createAccount(accountId);
+    function testRecordsWhenUserStakes() public {
+        system.createAccount(accountId);
 
-				IERC20(collateralAddress).approve(address(system), type(uint).max);
+        IERC20(collateralAddress).approve(address(system), type(uint256).max);
 
-				system.deposit(accountId, collateralAddress, depositAmount);
-				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
+        system.deposit(accountId, collateralAddress, depositAmount);
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
 
-				assert(rewardsDistributor.totalSupply() == depositAmount);
-				assert(rewardsDistributor.balanceOf(accountId) == depositAmount);
-				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
+        assert(rewardsDistributor.totalSupply() == depositAmount);
+        assert(rewardsDistributor.balanceOf(accountId) == depositAmount);
+        assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
 
-				rewardsDistributor.takeSnapshot(1);
-				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
+        rewardsDistributor.takeSnapshot(1);
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
 
-				assert(rewardsDistributor.totalSupply() == depositAmount / 2);
-				assert(rewardsDistributor.balanceOf(accountId) == depositAmount / 2);
-				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount / 2);
+        assert(rewardsDistributor.totalSupply() == depositAmount / 2);
+        assert(rewardsDistributor.balanceOf(accountId) == depositAmount / 2);
+        assert(rewardsDistributor.balanceOf(address(this)) == depositAmount / 2);
 
-				assert(rewardsDistributor.balanceOfOnPeriod(address(this), 0) == depositAmount);
+        assert(rewardsDistributor.balanceOfOnPeriod(address(this), 0) == depositAmount);
 
-				rewardsDistributor.takeSnapshot(10);
+        rewardsDistributor.takeSnapshot(10);
 
-				system.delegateCollateral(accountId, 1, collateralAddress, 0, 1e18);
+        system.delegateCollateral(accountId, 1, collateralAddress, 0, 1e18);
+    }
 
-		}
+    function testFailSnapshot() public {
+        rewardsDistributor.takeSnapshot(10);
+        // next snapshot is lower than previous
+        rewardsDistributor.takeSnapshot(2);
+    }
 
-		function testFailSnapshot() public {
-				rewardsDistributor.takeSnapshot(10);
-				// next snapshot is lower than previous
-				rewardsDistributor.takeSnapshot(2);
-		}
+    function testTransferAccount() public {
+        system.createAccount(accountId);
 
-		function testTransferAccount() public {
-				system.createAccount(accountId);
+        IERC20(collateralAddress).approve(address(system), type(uint256).max);
 
-				IERC20(collateralAddress).approve(address(system), type(uint).max);
+        system.deposit(accountId, collateralAddress, depositAmount);
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
 
-				system.deposit(accountId, collateralAddress, depositAmount);
-				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
+        assert(rewardsDistributor.totalSupply() == depositAmount);
+        assert(rewardsDistributor.balanceOf(accountId) == depositAmount);
+        assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
 
-				assert(rewardsDistributor.totalSupply() == depositAmount);
-				assert(rewardsDistributor.balanceOf(accountId) == depositAmount);
-				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
+        accountToken.transferFrom(address(this), address(0x1), accountId);
 
-				accountToken.transferFrom(address(this), address(0x1), accountId);
+        assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
 
-				assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
+        vm.prank(address(0x1));
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
 
-				vm.prank(address(0x1));
-				system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
+        assert(rewardsDistributor.totalSupply() == depositAmount / 2);
+        assert(rewardsDistributor.balanceOf(address(this)) == 0);
+        assert(rewardsDistributor.balanceOf(address(0x1)) == depositAmount / 2);
+    }
 
-				assert(rewardsDistributor.totalSupply() == depositAmount / 2);
-				assert(rewardsDistributor.balanceOf(address(this)) == 0);
-				assert(rewardsDistributor.balanceOf(address(0x1)) == depositAmount / 2);
-		}
-		
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes memory data
-				) external pure returns (bytes4) {
-				return this.onERC721Received.selector;
-		}
+    function onERC721Received(address operator, address from, uint256 tokenId, bytes memory data)
+        external
+        pure
+        returns (bytes4)
+    {
+        return this.onERC721Received.selector;
+    }
 }

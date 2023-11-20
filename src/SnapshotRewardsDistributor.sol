@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {IRewardsManagerModule} from "@synthetixio/main/contracts/interfaces/IRewardsManagerModule.sol"; 
+import {IRewardsManagerModule} from "@synthetixio/main/contracts/interfaces/IRewardsManagerModule.sol";
 import {IERC721} from "@synthetixio/core-contracts/contracts/interfaces/IERC721.sol";
 import {IRewardDistributor} from "@synthetixio/main/contracts/interfaces/external/IRewardDistributor.sol";
 import "./interfaces/ISnapshotRecord.sol";
@@ -14,19 +14,18 @@ import "./interfaces/ISynthetixCore.sol";
 import "forge-std/console.sol";
 
 contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
-		ISynthetixCore rewardsManager;
-		IERC721 accountToken;
-		uint128 public servicePoolId;
-		address public serviceCollateralType;
+    ISynthetixCore rewardsManager;
+    IERC721 accountToken;
+    uint128 public servicePoolId;
+    address public serviceCollateralType;
 
-		error IncorrectPoolId(uint128, uint128);
-		error IncorrectCollateralType(address, address);
+    error IncorrectPoolId(uint128, uint128);
+    error IncorrectCollateralType(address, address);
 
-		
     struct PeriodBalance {
         uint128 amount;
         uint128 periodId;
-				address owner;
+        address owner;
     }
 
     /**
@@ -49,103 +48,93 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
      * Similar to `balances`, the `totalSupplyOnPeriod` at index `currentPeriodId` matches the current total supply
      * Any other period ID would represent its most recent totalSupply before the period ID changed.
      */
-    mapping(uint => uint) public totalSupplyOnPeriod;
+    mapping(uint256 => uint256) public totalSupplyOnPeriod;
 
-		/**
-		 * Records the latest address to which account it is part of
-		 */
-		mapping(address => PeriodBalance[]) accountBalances;
+    /**
+     * Records the latest address to which account it is part of
+     */
+    mapping(address => PeriodBalance[]) accountBalances;
 
-		uint128 public currentPeriodId;
-		
-    uint internal constant MAX_PERIOD_ITERATE = 30;
+    uint128 public currentPeriodId;
 
-    constructor(ISynthetixCore _rewardsManager, uint128 _servicePoolId, address _serviceCollateralType, address snapper) {
-				servicePoolId = _servicePoolId;
-				serviceCollateralType = _serviceCollateralType;
+    uint256 internal constant MAX_PERIOD_ITERATE = 30;
+
+    constructor(
+        ISynthetixCore _rewardsManager,
+        uint128 _servicePoolId,
+        address _serviceCollateralType,
+        address snapper
+    ) {
+        servicePoolId = _servicePoolId;
+        serviceCollateralType = _serviceCollateralType;
         rewardsManager = _rewardsManager;
-				accountToken = IERC721(rewardsManager.getAccountTokenAddress());
-				authorizedToSnapshot[snapper] = true;
+        accountToken = IERC721(rewardsManager.getAccountTokenAddress());
+        authorizedToSnapshot[snapper] = true;
     }
 
     function onPositionUpdated(uint128 accountId, uint128 poolId, address collateralType, uint256 oldAmount) external {
-				if (msg.sender != address(rewardsManager)) {
-					revert("unauthorized");
-				}
+        if (msg.sender != address(rewardsManager)) {
+            revert("unauthorized");
+        }
 
-				if (poolId != servicePoolId) {
-					revert IncorrectPoolId(poolId, servicePoolId);
-				}
+        if (poolId != servicePoolId) {
+            revert IncorrectPoolId(poolId, servicePoolId);
+        }
 
-				if (collateralType != serviceCollateralType) {
-					revert IncorrectCollateralType(collateralType, serviceCollateralType);
-				}
+        if (collateralType != serviceCollateralType) {
+            revert IncorrectCollateralType(collateralType, serviceCollateralType);
+        }
 
-				// get current account information
-				uint256 newAmount = ISynthetixCore(address(rewardsManager)).getPositionCollateral(accountId, poolId, collateralType);
-				address account = accountToken.ownerOf(accountId);
+        // get current account information
+        uint256 newAmount =
+            ISynthetixCore(address(rewardsManager)).getPositionCollateral(accountId, poolId, collateralType);
+        address account = accountToken.ownerOf(accountId);
 
-				// ensure periods for all the values we will be updating are correct
-				uint256 idIdx = updatePeriod(balances[accountId]);
-				uint256 oldAccountIdx = updatePeriod(accountBalances[balances[accountId][idIdx].owner]);
-				uint256 accountIdx = updatePeriod(accountBalances[account]);
+        // ensure periods for all the values we will be updating are correct
+        uint256 idIdx = updatePeriod(balances[accountId]);
+        uint256 oldAccountIdx = updatePeriod(accountBalances[balances[accountId][idIdx].owner]);
+        uint256 accountIdx = updatePeriod(accountBalances[account]);
 
-				uint256 prevBalance = balances[accountId][accountIdx].amount;
+        uint256 prevBalance = balances[accountId][accountIdx].amount;
 
-				// subtract balance from previous owner
-				accountBalances[balances[accountId][idIdx].owner][oldAccountIdx].amount -= uint128(prevBalance);
+        // subtract balance from previous owner
+        accountBalances[balances[accountId][idIdx].owner][oldAccountIdx].amount -= uint128(prevBalance);
 
-				// add balance to new owner
-				accountBalances[account][accountIdx].amount += uint128(newAmount);
-				
-				// update account id record
-				balances[accountId][idIdx].amount = uint128(newAmount);
-				balances[accountId][idIdx].owner = account;
+        // add balance to new owner
+        accountBalances[account][accountIdx].amount += uint128(newAmount);
+
+        // update account id record
+        balances[accountId][idIdx].amount = uint128(newAmount);
+        balances[accountId][idIdx].owner = account;
 
         totalSupplyOnPeriod[currentPeriodId] = totalSupplyOnPeriod[currentPeriodId] + newAmount - prevBalance;
     }
 
-		function updatePeriod(PeriodBalance[] storage bals) internal returns (uint256) {
-			uint balanceCount = bals.length;
-			if (balanceCount == 0 || bals[balanceCount - 1].periodId != currentPeriodId) {
-					bals.push(PeriodBalance(0, uint128(currentPeriodId), address(0)));
+    function updatePeriod(PeriodBalance[] storage bals) internal returns (uint256) {
+        uint256 balanceCount = bals.length;
+        if (balanceCount == 0 || bals[balanceCount - 1].periodId != currentPeriodId) {
+            bals.push(PeriodBalance(0, uint128(currentPeriodId), address(0)));
 
-					if (balanceCount > 0) {
-							bals[balanceCount].amount = bals[balanceCount - 1].amount;
-							bals[balanceCount].owner = bals[balanceCount - 1].owner;
-					}
-
-					balanceCount++; 
-			}
-
-			return balanceCount - 1;
-		}
-		
-		function balanceOfOnPeriod(address account, uint periodId) public view returns (uint) {
-        uint accountPeriodHistoryCount = accountBalances[account].length;
-
-        int oldestHistoryIterate =
-            int(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
-        int i;
-        for (i = int(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
-            if (accountBalances[account][uint(i)].periodId <= periodId) {
-                return uint(accountBalances[account][uint(i)].amount);
+            if (balanceCount > 0) {
+                bals[balanceCount].amount = bals[balanceCount - 1].amount;
+                bals[balanceCount].owner = bals[balanceCount - 1].owner;
             }
+
+            balanceCount++;
         }
 
-        require(i < 0, "SynthetixDebtShare: not found in recent history");
-        return 0;
-		}
+        return balanceCount - 1;
+    }
 
-		function balanceOfOnPeriod(uint128 accountId, uint periodId) public view returns (uint) {
-        uint accountPeriodHistoryCount = balances[accountId].length;
+    function balanceOfOnPeriod(address account, uint256 periodId) public view returns (uint256) {
+        uint256 accountPeriodHistoryCount = accountBalances[account].length;
 
-        int oldestHistoryIterate =
-            int(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
-        int i;
-        for (i = int(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
-            if (balances[accountId][uint(i)].periodId <= periodId) {
-                return uint(balances[accountId][uint(i)].amount);
+        int256 oldestHistoryIterate =
+            int256(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
+        int256 i;
+        for (i = int256(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
+            if (accountBalances[account][uint256(i)].periodId <= periodId) {
+                return uint256(accountBalances[account][uint256(i)].amount);
             }
         }
 
@@ -153,33 +142,43 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         return 0;
     }
 
-		function balanceOf(uint128 accountId) external view returns (uint) {
-				return balanceOfOnPeriod(accountId, currentPeriodId);
-		}
+    function balanceOfOnPeriod(uint128 accountId, uint256 periodId) public view returns (uint256) {
+        uint256 accountPeriodHistoryCount = balances[accountId].length;
 
-		function balanceOf(address user) external view returns (uint) {
-				return balanceOfOnPeriod(user, currentPeriodId);
-		}
+        int256 oldestHistoryIterate =
+            int256(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
+        int256 i;
+        for (i = int256(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
+            if (balances[accountId][uint256(i)].periodId <= periodId) {
+                return uint256(balances[accountId][uint256(i)].amount);
+            }
+        }
 
-		function totalSupply() external view returns (uint) {
-				return totalSupplyOnPeriod[currentPeriodId];
-		}
+        require(i < 0, "SynthetixDebtShare: not found in recent history");
+        return 0;
+    }
+
+    function balanceOf(uint128 accountId) external view returns (uint256) {
+        return balanceOfOnPeriod(accountId, currentPeriodId);
+    }
+
+    function balanceOf(address user) external view returns (uint256) {
+        return balanceOfOnPeriod(user, currentPeriodId);
+    }
+
+    function totalSupply() external view returns (uint256) {
+        return totalSupplyOnPeriod[currentPeriodId];
+    }
 
     function takeSnapshot(uint128 id) external {
-				require(authorizedToSnapshot[msg.sender], "unauthorized");
+        require(authorizedToSnapshot[msg.sender], "unauthorized");
         require(id > currentPeriodId, "period id must always increase");
         totalSupplyOnPeriod[id] = totalSupplyOnPeriod[currentPeriodId];
         currentPeriodId = id;
-		}
-		
-    function payout(
-        uint128,
-        uint128,
-        address,
-        address sender,
-        uint256 amount
-    ) external returns (bool) {
-				// this is not a rewards distributor that pays out any tokens
+    }
+
+    function payout(uint128, uint128, address, address sender, uint256 amount) external returns (bool) {
+        // this is not a rewards distributor that pays out any tokens
     }
 
     function name() public pure override returns (string memory) {
@@ -187,18 +186,13 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     }
 
     function token() public pure override returns (address) {
-				return address(0);
+        return address(0);
     }
-
 
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(IERC165) returns (bool) {
-        return
-            interfaceId == type(IRewardDistributor).interfaceId ||
-            interfaceId == this.supportsInterface.selector;
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165) returns (bool) {
+        return interfaceId == type(IRewardDistributor).interfaceId || interfaceId == this.supportsInterface.selector;
     }
 }
