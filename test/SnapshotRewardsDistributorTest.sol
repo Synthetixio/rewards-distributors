@@ -32,6 +32,9 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
         assert(rewardsDistributor.currentPeriodId() == 0);
         assert(rewardsDistributor.servicePoolId() == 1);
         assert(rewardsDistributor.serviceCollateralType() == collateralAddress);
+
+				assert(rewardsDistributor.balanceOf(accountId) == 0);
+				assert(rewardsDistributor.balanceOf(address(this)) == 0);
     }
 
     function testRecordsWhenUserStakes() public {
@@ -47,6 +50,7 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
         assert(rewardsDistributor.balanceOf(address(this)) == depositAmount);
 
         rewardsDistributor.takeSnapshot(1);
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 3, 1e18);
         system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / 2, 1e18);
 
         assert(rewardsDistributor.totalSupply() == depositAmount / 2);
@@ -56,15 +60,60 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
         assert(rewardsDistributor.balanceOfOnPeriod(address(this), 0) == depositAmount);
 
         rewardsDistributor.takeSnapshot(10);
+				rewardsDistributor.takeSnapshot(20);
 
         system.delegateCollateral(accountId, 1, collateralAddress, 0, 1e18);
     }
 
-    function testFailSnapshot() public {
+		function testWhenRecordHistoryExceeded() public {
+        system.createAccount(accountId);
+
+        IERC20(collateralAddress).approve(address(system), type(uint256).max);
+
+        system.deposit(accountId, collateralAddress, depositAmount);
+        system.delegateCollateral(accountId, 1, collateralAddress, depositAmount, 1e18);
+
+				for (uint128 i = 0;i < 100;i++) {
+					rewardsDistributor.takeSnapshot(i * 10 + 1);
+					system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / (i + 2), 1e18);
+				}
+
+				assert(rewardsDistributor.balanceOfOnPeriod(accountId, 981) == depositAmount / 100);
+				assert(rewardsDistributor.balanceOfOnPeriod(accountId, 980) == depositAmount / 99);
+				assert(rewardsDistributor.balanceOfOnPeriod(address(this), 982) == depositAmount / 100);
+				assert(rewardsDistributor.balanceOfOnPeriod(address(this), 981) == depositAmount / 100);
+				assert(rewardsDistributor.balanceOfOnPeriod(address(this), 980) == depositAmount / 99);
+
+				vm.expectRevert("SynthetixDebtShare: not found in recent history");
+        rewardsDistributor.balanceOfOnPeriod(accountId, 11);
+
+				vm.expectRevert("SynthetixDebtShare: not found in recent history");
+				rewardsDistributor.balanceOfOnPeriod(address(this), 11);
+		}
+
+    function testSnapshotFailures() public {
+				vm.expectRevert("unauthorized");
+				vm.prank(address(0x1));
+				rewardsDistributor.takeSnapshot(1234);
+
         rewardsDistributor.takeSnapshot(10);
         // next snapshot is lower than previous
+				vm.expectRevert("period id must always increase");
         rewardsDistributor.takeSnapshot(2);
     }
+
+		function testOnPositionUpdatedFailures() public {
+				vm.expectRevert("unauthorized");
+				rewardsDistributor.onPositionUpdated(0, 0, address(0), 0);
+
+				vm.expectRevert(abi.encodePacked(SnapshotRewardsDistributor.IncorrectPoolId.selector, uint256(1234), uint256(1)));
+				vm.prank(address(system));
+				rewardsDistributor.onPositionUpdated(1234, 1234, address(0), 0);
+
+				vm.expectRevert(abi.encodePacked(SnapshotRewardsDistributor.IncorrectCollateralType.selector, uint256(uint160(address(0))), uint256(uint160(address(collateralAddress)))));
+				vm.prank(address(system));
+				rewardsDistributor.onPositionUpdated(1, 1, address(0), 0);
+		}
 
     function testTransferAccount() public {
         system.createAccount(accountId);
@@ -89,6 +138,26 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
         assert(rewardsDistributor.balanceOf(address(this)) == 0);
         assert(rewardsDistributor.balanceOf(address(0x1)) == depositAmount / 2);
     }
+
+		function testPayout() public {
+				assert(rewardsDistributor.payout(0, 0, address(0), address(0), 0));
+		}
+
+		function testName() public {
+			// does not revert?
+			rewardsDistributor.name();
+		}
+
+		function testToken() public {
+			assert(rewardsDistributor.token() == address(0));
+		}
+
+		function testInterfaceSupported() public {
+			assert(rewardsDistributor.supportsInterface(type(IRewardDistributor).interfaceId));
+			assert(rewardsDistributor.supportsInterface(SnapshotRewardsDistributor.supportsInterface.selector));
+
+			assert(!rewardsDistributor.supportsInterface(0x000000000));
+		}
 
     function onERC721Received(address operator, address from, uint256 tokenId, bytes memory data)
         external
