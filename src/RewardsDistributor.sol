@@ -41,9 +41,7 @@ contract RewardsDistributor is IRewardDistributor {
         return !shouldFailPayout;
     }
 
-    function distributeRewards(uint128 poolId, address collateralType, uint256 amount, uint64 start, uint32 duration)
-        public
-    {
+    function distributeRewards(uint128 poolId, address collateralType, uint256 amount, uint64 start, uint32 duration) public {
         IRewardsManagerModule(_rewardManager).distributeRewards(poolId, collateralType, amount, start, duration);
     }
 

@@ -179,7 +179,7 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
 
     function payout(uint128, uint128, address, address sender, uint256 amount) external returns (bool) {
         // this is not a rewards distributor that pays out any tokens
-				return true;
+        return true;
     }
 
     function name() public pure override returns (string memory) {
