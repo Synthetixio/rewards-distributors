@@ -5,6 +5,7 @@ libs = ["lib"]
 remappings = [
     "@synthetixio/main=lib/synthetix-v3/protocol/synthetix",
     "@synthetixio/core-contracts=lib/synthetix-v3/utils/core-contracts",
+    "ds-test=lib/ds-test/src",
 ]
 
 fs_permissions = [{ access = "read", path = "./" }]
