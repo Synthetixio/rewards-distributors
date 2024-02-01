@@ -72,7 +72,12 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         authorizedToSnapshot[snapper] = true;
     }
 
-    function onPositionUpdated(uint128 accountId, uint128 poolId, address collateralType, uint256 oldAmount) external {
+    function onPositionUpdated(
+        uint128 accountId,
+        uint128 poolId,
+        address collateralType,
+        uint256 oldAmount
+    ) external {
         if (msg.sender != address(rewardsManager)) {
             revert("unauthorized");
         }
@@ -86,8 +91,11 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         }
 
         // get current account information
-        uint256 newAmount =
-            ISynthetixCore(address(rewardsManager)).getPositionCollateral(accountId, poolId, collateralType);
+        uint256 newAmount = ISynthetixCore(address(rewardsManager)).getPositionCollateral(
+            accountId,
+            poolId,
+            collateralType
+        );
         address account = accountToken.ownerOf(accountId);
 
         // ensure periods for all the values we will be updating are correct
@@ -98,7 +106,9 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         uint256 prevBalance = balances[accountId][accountIdx].amount;
 
         // subtract balance from previous owner
-        accountBalances[balances[accountId][idIdx].owner][oldAccountIdx].amount -= uint128(prevBalance);
+        accountBalances[balances[accountId][idIdx].owner][oldAccountIdx].amount -= uint128(
+            prevBalance
+        );
 
         // add balance to new owner
         accountBalances[account][accountIdx].amount += uint128(newAmount);
@@ -107,7 +117,10 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         balances[accountId][idIdx].amount = uint128(newAmount);
         balances[accountId][idIdx].owner = account;
 
-        totalSupplyOnPeriod[currentPeriodId] = totalSupplyOnPeriod[currentPeriodId] + newAmount - prevBalance;
+        totalSupplyOnPeriod[currentPeriodId] =
+            totalSupplyOnPeriod[currentPeriodId] +
+            newAmount -
+            prevBalance;
     }
 
     function updatePeriod(PeriodBalance[] storage bals) internal returns (uint256) {
@@ -129,8 +142,11 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     function balanceOfOnPeriod(address account, uint256 periodId) public view returns (uint256) {
         uint256 accountPeriodHistoryCount = accountBalances[account].length;
 
-        int256 oldestHistoryIterate =
-            int256(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
+        int256 oldestHistoryIterate = int256(
+            MAX_PERIOD_ITERATE < accountPeriodHistoryCount
+                ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE
+                : 0
+        );
         int256 i;
         for (i = int256(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
             if (accountBalances[account][uint256(i)].periodId <= periodId) {
@@ -145,8 +161,11 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     function balanceOfOnPeriod(uint128 accountId, uint256 periodId) public view returns (uint256) {
         uint256 accountPeriodHistoryCount = balances[accountId].length;
 
-        int256 oldestHistoryIterate =
-            int256(MAX_PERIOD_ITERATE < accountPeriodHistoryCount ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE : 0);
+        int256 oldestHistoryIterate = int256(
+            MAX_PERIOD_ITERATE < accountPeriodHistoryCount
+                ? accountPeriodHistoryCount - MAX_PERIOD_ITERATE
+                : 0
+        );
         int256 i;
         for (i = int256(accountPeriodHistoryCount) - 1; i >= oldestHistoryIterate; i--) {
             if (balances[accountId][uint256(i)].periodId <= periodId) {
@@ -177,7 +196,13 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         currentPeriodId = id;
     }
 
-    function payout(uint128, uint128, address, address sender, uint256 amount) external returns (bool) {
+    function payout(
+        uint128,
+        uint128,
+        address,
+        address sender,
+        uint256 amount
+    ) external returns (bool) {
         // this is not a rewards distributor that pays out any tokens
         return true;
     }
@@ -191,7 +216,11 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165) returns (bool) {
-        return interfaceId == type(IRewardDistributor).interfaceId || interfaceId == this.supportsInterface.selector;
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165) returns (bool) {
+        return
+            interfaceId == type(IRewardDistributor).interfaceId ||
+            interfaceId == this.supportsInterface.selector;
     }
 }

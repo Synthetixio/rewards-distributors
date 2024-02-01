@@ -75,7 +75,13 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
 
         for (uint128 i = 0; i < 100; i++) {
             rewardsDistributor.takeSnapshot(i * 10 + 1);
-            system.delegateCollateral(accountId, 1, collateralAddress, depositAmount / (i + 2), 1e18);
+            system.delegateCollateral(
+                accountId,
+                1,
+                collateralAddress,
+                depositAmount / (i + 2),
+                1e18
+            );
         }
 
         assert(rewardsDistributor.balanceOfOnPeriod(accountId, 981) == depositAmount / 100);
@@ -106,11 +112,23 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
         vm.expectRevert("unauthorized");
         rewardsDistributor.onPositionUpdated(0, 0, address(0), 0);
 
-        vm.expectRevert(abi.encodePacked(SnapshotRewardsDistributor.IncorrectPoolId.selector, uint256(1234), uint256(1)));
+        vm.expectRevert(
+            abi.encodePacked(
+                SnapshotRewardsDistributor.IncorrectPoolId.selector,
+                uint256(1234),
+                uint256(1)
+            )
+        );
         vm.prank(address(system));
         rewardsDistributor.onPositionUpdated(1234, 1234, address(0), 0);
 
-        vm.expectRevert(abi.encodePacked(SnapshotRewardsDistributor.IncorrectCollateralType.selector, uint256(uint160(address(0))), uint256(uint160(address(collateralAddress)))));
+        vm.expectRevert(
+            abi.encodePacked(
+                SnapshotRewardsDistributor.IncorrectCollateralType.selector,
+                uint256(uint160(address(0))),
+                uint256(uint160(address(collateralAddress)))
+            )
+        );
         vm.prank(address(system));
         rewardsDistributor.onPositionUpdated(1, 1, address(0), 0);
     }
@@ -154,13 +172,21 @@ contract SynthetixSafeModuleTest is Test, IERC721Receiver {
 
     function testInterfaceSupported() public {
         assert(rewardsDistributor.supportsInterface(type(IRewardDistributor).interfaceId));
-        assert(rewardsDistributor.supportsInterface(SnapshotRewardsDistributor.supportsInterface.selector));
+        assert(
+            rewardsDistributor.supportsInterface(
+                SnapshotRewardsDistributor.supportsInterface.selector
+            )
+        );
 
         assert(!rewardsDistributor.supportsInterface(0x000000000));
     }
 
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes memory data) external pure returns (bytes4)
-    {
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes memory data
+    ) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
