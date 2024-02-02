@@ -13,8 +13,11 @@ docs/
 # Dotenv file
 .env
 
+
 deployments/
 
+lcov.info
+coverage/
 
 # Yarn
 .yarn/*
