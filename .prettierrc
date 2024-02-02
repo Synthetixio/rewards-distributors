@@ -1,0 +1,37 @@
+{
+  "printWidth": 100,
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": "*.toml",
+      "options": {
+        "plugins": ["prettier-plugin-toml"],
+        "tabWidth": 4,
+        "singleQuote": false,
+        "bracketSpacing": false
+      }
+    },
+    {
+      "files": "*.sol",
+      "options": {
+        "plugins": ["prettier-plugin-solidity"],
+        "tabWidth": 4,
+        "singleQuote": false,
+        "bracketSpacing": false
+      }
+    },
+    {
+      "files": [
+        "*.js",
+        "*.ts",
+        "*.md"
+      ],
+      "options": {
+        "semi": true,
+        "singleQuote": true,
+        "bracketSpacing": true,
+        "trailingComma": "es5"
+      }
+    }
+  ]
+}

@@ -22,4 +22,9 @@ preset = "<%= settings.synthetixPreset %>"
 
 [contract.RewardsDistributor]
 artifact = "SnapshotRewardsDistributor"
-args = ["<%= imports.synthetix.contracts.CoreProxy.address %>", "<%= settings.servicePoolId %>", "<%= settings.serviceCollateralAddress %>", "<%= settings.snapper %>"]
+args = [
+    "<%= imports.synthetix.contracts.CoreProxy.address %>",
+    "<%= settings.servicePoolId %>",
+    "<%= settings.serviceCollateralAddress %>",
+    "<%= settings.snapper %>",
+]

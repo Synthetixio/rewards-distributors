@@ -34,7 +34,6 @@ fromCall.func = "owner"
 func = "setFeatureFlagAllowAll"
 args = ["<%= formatBytes32String('delegateCollateral') %>", true]
 
-
 [invoke.permit_create_pool]
 target = ["ssr.synthetix.CoreProxy"]
 fromCall.func = "owner"
@@ -58,7 +57,11 @@ depends = ["invoke.permit_create_pool"]
 target = ["ssr.synthetix.CoreProxy"]
 from = "<%= settings.test_user %>"
 func = "registerRewardsDistributor"
-args = [1, "<%= imports.token.contracts.MintableToken.address %>", "<%= imports.ssr.contracts.RewardsDistributor.address %>"]
+args = [
+    1,
+    "<%= imports.token.contracts.MintableToken.address %>",
+    "<%= imports.ssr.contracts.RewardsDistributor.address %>",
+]
 depends = ["invoke.create_pool"]
 
 [invoke.mint]
