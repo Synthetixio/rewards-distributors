@@ -1,0 +1,71 @@
+version: 2.1
+
+parameters:
+  node-version:
+    type: string
+    default: "20.10.0"
+
+commands:
+  yarn-install:
+    steps:
+      - run: yarn install --immutable
+
+  install-forge:
+    steps:
+      - restore_cache:
+          keys:
+            - foundry-{{ .Environment.FOUNDRY_CACHE_VERSION }}
+
+      - run:
+          name: "Install Foundry"
+          working_directory: ~/
+          environment:
+            SHELL: /bin/bash
+          command: |-
+            export PATH="$PATH:$HOME/.foundry/bin"
+            echo 'export PATH=$PATH:$HOME/.foundry/bin' >> $BASH_ENV
+
+            if command -v forge; then
+              echo "Forge already installed"
+              forge --version
+            else
+              curl -L https://foundry.paradigm.xyz | bash
+              foundryup
+            fi
+
+      - save_cache:
+          key: foundry-{{ .Environment.FOUNDRY_CACHE_VERSION }}
+          paths:
+            - "~/.foundry"
+
+jobs:
+  test:
+    parameters:
+      testFile:
+        type: string
+    docker:
+      - image: cimg/node:<< pipeline.parameters.node-version >>
+    steps:
+      - checkout
+      - install-forge
+      - yarn-install
+      - run: yarn dedupe --check
+      - run: yarn pretty:check
+      - run: forge test -vvvvv --match-path << parameters.testFile >>
+      - run: forge coverage --report lcov
+      - run: sudo apt install lcov
+      - run: genhtml ./lcov.info --output-directory coverage
+      - store_artifacts:
+          path: "./coverage"
+      - run: |-
+          curl -Os https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov -t ${CODECOV_TOKEN} --file lcov.info
+
+workflows:
+  version: 2.1
+
+  tests:
+    jobs:
+      - test:
+          testFile: "./test/RewardsDistributorTest.sol"
