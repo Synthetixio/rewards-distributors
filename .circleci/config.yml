@@ -47,13 +47,15 @@ jobs:
       - image: cimg/node:<< pipeline.parameters.node-version >>
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - install-forge
       - yarn-install
       - run: yarn dedupe --check
       - run: yarn pretty:check
       - run: forge test -vvvvv --match-path << parameters.testFile >>
       - run: forge coverage --report lcov
-      - run: sudo apt install lcov
+      - run: sudo apt update && sudo apt install --yes lcov
       - run: genhtml ./lcov.info --output-directory coverage
       - store_artifacts:
           path: "./coverage"
