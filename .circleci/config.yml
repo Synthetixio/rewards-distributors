@@ -55,10 +55,10 @@ jobs:
       - run: yarn pretty:check
       - run: forge test -vvvvv --match-path << parameters.testFile >>
       - run: forge coverage --report lcov
-      - run: sudo apt update && sudo apt install --yes lcov
-      - run: genhtml ./lcov.info --output-directory coverage
-      - store_artifacts:
-          path: "./coverage"
+      #- run: sudo apt update && sudo apt install --yes lcov
+      #- run: genhtml ./lcov.info --output-directory coverage
+      #- store_artifacts:
+      #    path: "./coverage"
       - run: |-
           curl -Os https://uploader.codecov.io/latest/linux/codecov
           chmod +x codecov
