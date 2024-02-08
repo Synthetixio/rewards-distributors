@@ -4,23 +4,17 @@ pragma solidity ^0.8.13;
 import {IRewardsManagerModule} from "@synthetixio/main/contracts/interfaces/IRewardsManagerModule.sol";
 import {IERC721} from "@synthetixio/core-contracts/contracts/interfaces/IERC721.sol";
 import {IRewardDistributor} from "@synthetixio/main/contracts/interfaces/external/IRewardDistributor.sol";
-import "./interfaces/ISnapshotRecord.sol";
 import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessError.sol";
-import {IERC20} from "@synthetixio/core-contracts/contracts/interfaces/IERC20.sol";
+import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
 import {IERC165} from "@synthetixio/core-contracts/contracts/interfaces/IERC165.sol";
-
-import "./interfaces/ISynthetixCore.sol";
-
-import "forge-std/console.sol";
+import {ISnapshotRecord} from "./interfaces/ISnapshotRecord.sol";
+import {ISynthetixCore} from "./interfaces/ISynthetixCore.sol";
 
 contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
-    ISynthetixCore rewardsManager;
-    IERC721 accountToken;
+    ISynthetixCore private rewardsManager;
+    IERC721 private accountToken;
     uint128 public servicePoolId;
     address public serviceCollateralType;
-
-    error IncorrectPoolId(uint128, uint128);
-    error IncorrectCollateralType(address, address);
 
     struct PeriodBalance {
         uint128 amount;
@@ -53,7 +47,7 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     /**
      * Records the latest address to which account it is part of
      */
-    mapping(address => PeriodBalance[]) accountBalances;
+    mapping(address => PeriodBalance[]) private accountBalances;
 
     uint128 public currentPeriodId;
 
@@ -76,18 +70,18 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         uint128 accountId,
         uint128 poolId,
         address collateralType,
-        uint256 oldAmount
+        uint256 // actorSharesD18
     ) external {
         if (msg.sender != address(rewardsManager)) {
-            revert("unauthorized");
+            revert AccessError.Unauthorized(msg.sender);
         }
 
         if (poolId != servicePoolId) {
-            revert IncorrectPoolId(poolId, servicePoolId);
+            revert ParameterError.InvalidParameter("poolId", "Unexpected pool");
         }
 
         if (collateralType != serviceCollateralType) {
-            revert IncorrectCollateralType(collateralType, serviceCollateralType);
+            revert ParameterError.InvalidParameter("collateralType", "Unexpected collateral");
         }
 
         // get current account information
@@ -190,19 +184,23 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     }
 
     function takeSnapshot(uint128 id) external {
-        require(authorizedToSnapshot[msg.sender], "unauthorized");
-        require(id > currentPeriodId, "period id must always increase");
+        if (!authorizedToSnapshot[msg.sender]) {
+            revert AccessError.Unauthorized(msg.sender);
+        }
+        if (id <= currentPeriodId) {
+            revert ParameterError.InvalidParameter("id", "period id must always increase");
+        }
         totalSupplyOnPeriod[id] = totalSupplyOnPeriod[currentPeriodId];
         currentPeriodId = id;
     }
 
     function payout(
-        uint128,
-        uint128,
-        address,
-        address sender,
-        uint256 amount
-    ) external returns (bool) {
+        uint128, // accountId
+        uint128, // poolId_
+        address, // collateralType_
+        address, // payoutTarget_
+        uint256 // payoutAmount_
+    ) external pure returns (bool) {
         // this is not a rewards distributor that pays out any tokens
         return true;
     }

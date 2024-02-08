@@ -13,13 +13,13 @@ import "../src/interfaces/IERC721Receiver.sol";
 contract SynthetixSafeModuleTest is Test, IERC721Receiver {
     using Cannon for Vm;
 
-    ISynthetixCore system;
-    IERC721 accountToken;
-    SnapshotRewardsDistributor rewardsDistributor;
-    address collateralAddress;
+    ISynthetixCore private system;
+    IERC721 private accountToken;
+    SnapshotRewardsDistributor private rewardsDistributor;
+    address private collateralAddress;
 
-    uint128 constant accountId = 1234;
-    uint256 depositAmount = 1000 * 1e18;
+    uint128 private constant accountId = 1234;
+    uint256 private constant depositAmount = 1000 * 1e18;
 
     function setUp() public {
         system = ISynthetixCore(vm.getAddress("ssr.synthetix.CoreProxy"));
