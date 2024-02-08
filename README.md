@@ -18,11 +18,3 @@ To install `genhtml`:
 ```sh
 brew install lcov
 ```
-
-## Running e2e tests for SnapshotRewardsDistributor
-
-```sh
-FOUNDRY_PROFILE=lite npx @usecannon/cli build cannonfile.snapshot.toml
-FOUNDRY_PROFILE=lite CANNON_REGISTRY_PRIORITY=local npx @usecannon/cli build cannonfile.snapshot.test.toml
-FOUNDRY_PROFILE=lite CANNON_REGISTRY_PRIORITY=local npx @usecannon/cli test cannonfile.snapshot.test.toml
-```
