@@ -11,7 +11,7 @@ import {ISynthetixCore} from "./interfaces/ISynthetixCore.sol";
 contract RewardsDistributor is IRewardDistributor {
     using ERC20Helper for address;
 
-    address private rewardManager;
+    address public rewardManager;
     uint128 public poolId;
     address public collateralType;
     string public name;

@@ -42,7 +42,9 @@ contract CoreProxyMock {
         duration = duration_;
     }
 
-    function getPoolOwner(uint128 poolId_) public view returns (address) {
+    function getPoolOwner(
+        uint128 // poolId_
+    ) public view returns (address) {
         return address(this);
     }
 }
@@ -65,6 +67,7 @@ contract RewardsDistributorTest is Test {
     }
 
     function test_constructor_arguments() public {
+        assertEq(rewardsDistributor.rewardManager(), address(rewardsManager));
         assertEq(rewardsDistributor.name(), "whatever");
         assertEq(rewardsDistributor.collateralType(), address(fakeSnxToken));
         assertEq(rewardsDistributor.token(), address(fakeSnxToken));
