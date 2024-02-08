@@ -110,6 +110,48 @@ contract RewardsDistributorTest is Test {
         vm.stopPrank();
     }
 
+    function test_payout_WrongPool() public {
+        fakeSnxToken.mint(address(rewardsDistributor), 1000e18);
+        vm.startPrank(address(rewardsManager));
+        vm.deal(address(rewardsManager), 1 ether);
+        uint128 accountId = 1;
+        uint128 poolId = 2;
+        address collateralType = address(fakeSnxToken);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ParameterError.InvalidParameter.selector,
+                "poolId",
+                "Unexpected pool"
+            )
+        );
+        assertEq(
+            rewardsDistributor.payout(accountId, poolId, collateralType, vm.addr(0xB0B), 10e18),
+            false
+        );
+        vm.stopPrank();
+    }
+
+    function test_payout_WrongCollateralType() public {
+        fakeSnxToken.mint(address(rewardsDistributor), 1000e18);
+        vm.startPrank(address(rewardsManager));
+        vm.deal(address(rewardsManager), 1 ether);
+        uint128 accountId = 1;
+        uint128 poolId = 1;
+        address collateralType = address(0xB0B);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ParameterError.InvalidParameter.selector,
+                "collateralType",
+                "Unexpected collateral"
+            )
+        );
+        assertEq(
+            rewardsDistributor.payout(accountId, poolId, collateralType, vm.addr(0xB0B), 10e18),
+            false
+        );
+        vm.stopPrank();
+    }
+
     function test_payout_underflow() public {
         vm.startPrank(address(rewardsManager));
         vm.deal(address(rewardsManager), 1 ether);

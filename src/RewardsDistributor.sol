@@ -43,8 +43,8 @@ contract RewardsDistributor is IRewardDistributor {
 
     function payout(
         uint128, // accountId,
-        uint128, // poolId,
-        address, // collateralType,
+        uint128 poolId_,
+        address collateralType_,
         address payoutTarget_, // msg.sender of claimRewards() call, payout target address
         uint256 payoutAmount_
     ) external returns (bool) {
@@ -54,6 +54,12 @@ contract RewardsDistributor is IRewardDistributor {
         // IMPORTANT: In production, this function should revert if msg.sender is not the Synthetix CoreProxy address.
         if (msg.sender != rewardManager) {
             revert AccessError.Unauthorized(msg.sender);
+        }
+        if (poolId_ != poolId) {
+            revert ParameterError.InvalidParameter("poolId", "Unexpected pool");
+        }
+        if (collateralType_ != collateralType) {
+            revert ParameterError.InvalidParameter("collateralType", "Unexpected collateral");
         }
         collateralType.safeTransfer(payoutTarget_, payoutAmount_);
         return true;
