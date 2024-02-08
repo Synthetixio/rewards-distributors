@@ -4,11 +4,13 @@ pragma solidity ^0.8.13;
 import {IRewardDistributor} from "@synthetixio/main/contracts/interfaces/external/IRewardDistributor.sol";
 import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessError.sol";
 import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
-import {IERC20} from "@synthetixio/core-contracts/contracts/interfaces/IERC20.sol";
+import {ERC20Helper} from "@synthetixio/core-contracts/contracts/token/ERC20Helper.sol";
 import {IERC165} from "@synthetixio/core-contracts/contracts/interfaces/IERC165.sol";
 import {ISynthetixCore} from "./interfaces/ISynthetixCore.sol";
 
 contract RewardsDistributor is IRewardDistributor {
+    using ERC20Helper for address;
+
     address private rewardManager;
     uint128 public poolId;
     address public collateralType;
@@ -53,7 +55,7 @@ contract RewardsDistributor is IRewardDistributor {
         if (msg.sender != rewardManager) {
             revert AccessError.Unauthorized(msg.sender);
         }
-        IERC20(collateralType).transfer(payoutTarget_, payoutAmount_);
+        collateralType.safeTransfer(payoutTarget_, payoutAmount_);
         return true;
     }
 

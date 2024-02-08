@@ -9,6 +9,7 @@ import {IRewardsManagerModule} from "@synthetixio/main/contracts/interfaces/IRew
 import {IRewardDistributor} from "@synthetixio/main/contracts/interfaces/external/IRewardDistributor.sol";
 import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessError.sol";
 import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
+import {ERC20Helper} from "@synthetixio/core-contracts/contracts/token/ERC20Helper.sol";
 
 contract FakeSNX is MockERC20 {
     constructor() {
@@ -114,7 +115,14 @@ contract RewardsDistributorTest is Test {
         vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
-        vm.expectRevert(bytes("ERC20: subtraction underflow"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Helper.FailedTransfer.selector,
+                address(rewardsDistributor),
+                vm.addr(0xB0B),
+                10e18
+            )
+        );
         assertEq(
             rewardsDistributor.payout(
                 accountId,
