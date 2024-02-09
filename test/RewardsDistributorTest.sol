@@ -124,7 +124,7 @@ contract RewardsDistributorTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "poolId",
-                "Unexpected pool"
+                "Pool does not match the rewards pool"
             )
         );
         assertEq(
@@ -145,7 +145,7 @@ contract RewardsDistributorTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "collateralType",
-                "Unexpected collateral"
+                "Collateral does not match the rewards token"
             )
         );
         assertEq(
@@ -248,7 +248,7 @@ contract RewardsDistributorTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "poolId",
-                "Unexpected pool"
+                "Pool does not match the rewards pool"
             )
         );
         rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);
@@ -268,7 +268,7 @@ contract RewardsDistributorTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "collateralType",
-                "Unexpected collateral"
+                "Collateral does not match the rewards token"
             )
         );
         rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);

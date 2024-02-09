@@ -56,10 +56,16 @@ contract RewardsDistributor is IRewardDistributor {
             revert AccessError.Unauthorized(msg.sender);
         }
         if (poolId_ != poolId) {
-            revert ParameterError.InvalidParameter("poolId", "Unexpected pool");
+            revert ParameterError.InvalidParameter(
+                "poolId",
+                "Pool does not match the rewards pool"
+            );
         }
         if (collateralType_ != collateralType) {
-            revert ParameterError.InvalidParameter("collateralType", "Unexpected collateral");
+            revert ParameterError.InvalidParameter(
+                "collateralType",
+                "Collateral does not match the rewards token"
+            );
         }
         collateralType.safeTransfer(payoutTarget_, payoutAmount_);
         return true;
@@ -76,10 +82,16 @@ contract RewardsDistributor is IRewardDistributor {
             revert AccessError.Unauthorized(msg.sender);
         }
         if (poolId_ != poolId) {
-            revert ParameterError.InvalidParameter("poolId", "Unexpected pool");
+            revert ParameterError.InvalidParameter(
+                "poolId",
+                "Pool does not match the rewards pool"
+            );
         }
         if (collateralType_ != collateralType) {
-            revert ParameterError.InvalidParameter("collateralType", "Unexpected collateral");
+            revert ParameterError.InvalidParameter(
+                "collateralType",
+                "Collateral does not match the rewards token"
+            );
         }
         ISynthetixCore(rewardManager).distributeRewards(
             poolId_,
