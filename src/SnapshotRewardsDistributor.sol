@@ -77,11 +77,17 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
         }
 
         if (poolId != servicePoolId) {
-            revert ParameterError.InvalidParameter("poolId", "Unexpected pool");
+            revert ParameterError.InvalidParameter(
+                "poolId",
+                "Pool does not match the rewards pool"
+            );
         }
 
         if (collateralType != serviceCollateralType) {
-            revert ParameterError.InvalidParameter("collateralType", "Unexpected collateral");
+            revert ParameterError.InvalidParameter(
+                "collateralType",
+                "Collateral does not match the rewards token"
+            );
         }
 
         // get current account information

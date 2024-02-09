@@ -148,7 +148,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "poolId",
-                "Unexpected pool"
+                "Pool does not match the rewards pool"
             )
         );
         rewardsDistributor.onPositionUpdated(accountId, poolId, collateralType, 123);
@@ -166,7 +166,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
                 "collateralType",
-                "Unexpected collateral"
+                "Collateral does not match the rewards token"
             )
         );
         rewardsDistributor.onPositionUpdated(accountId, poolId, collateralType, actorSharesD18);
