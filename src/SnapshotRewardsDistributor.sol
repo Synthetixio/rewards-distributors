@@ -16,6 +16,8 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
     uint128 public servicePoolId;
     address public serviceCollateralType;
 
+    error NotFoundInRecentHistory();
+
     struct PeriodBalance {
         uint128 amount;
         uint128 periodId;
@@ -154,7 +156,10 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
             }
         }
 
-        require(i < 0, "SynthetixDebtShare: not found in recent history");
+        if (i >= 0) {
+            revert NotFoundInRecentHistory();
+        }
+
         return 0;
     }
 
@@ -173,7 +178,10 @@ contract SnapshotRewardsDistributor is IRewardDistributor, ISnapshotRecord {
             }
         }
 
-        require(i < 0, "SynthetixDebtShare: not found in recent history");
+        if (i >= 0) {
+            revert NotFoundInRecentHistory();
+        }
+
         return 0;
     }
 

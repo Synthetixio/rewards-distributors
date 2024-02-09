@@ -62,12 +62,18 @@ contract CoreProxyMock {
 }
 
 contract SnapshotRewardsDistributorUnitTest is Test {
+    address private ALICE;
+    address private BOB;
+
     SNXAccount internal snxAccount;
     FakeSNX internal fakeSnxToken;
     SnapshotRewardsDistributor internal rewardsDistributor;
     ISynthetixCore internal rewardsManager;
 
     function setUp() public {
+        ALICE = vm.addr(0xA11CE);
+        BOB = vm.addr(0xB0B);
+
         snxAccount = new SNXAccount();
         fakeSnxToken = new FakeSNX();
         CoreProxyMock coreProxyMock = new CoreProxyMock(snxAccount);
@@ -77,19 +83,19 @@ contract SnapshotRewardsDistributorUnitTest is Test {
             rewardsManager,
             poolId,
             address(fakeSnxToken),
-            vm.addr(0xA11CE)
+            ALICE
         );
     }
 
     function test_constructor_arguments() public {
         assertEq(rewardsDistributor.servicePoolId(), 1);
         assertEq(rewardsDistributor.serviceCollateralType(), address(fakeSnxToken));
-        assertEq(rewardsDistributor.authorizedToSnapshot(vm.addr(0xA11CE)), true);
+        assertEq(rewardsDistributor.authorizedToSnapshot(ALICE), true);
         assertEq(rewardsDistributor.currentPeriodId(), 0);
     }
 
     function test_payout() public {
-        assertTrue(rewardsDistributor.payout(123, 234, vm.addr(0xDEAD), vm.addr(0xB0B), 678));
+        assertTrue(rewardsDistributor.payout(123, 234, vm.addr(0xDEAD), BOB, 678));
     }
 
     function test_name() public {
@@ -107,14 +113,14 @@ contract SnapshotRewardsDistributorUnitTest is Test {
     }
 
     function test_takeSnapshot_AccessError() public {
-        vm.startPrank(vm.addr(0xB0B));
-        vm.expectRevert(abi.encodeWithSelector(AccessError.Unauthorized.selector, vm.addr(0xB0B)));
+        vm.startPrank(BOB);
+        vm.expectRevert(abi.encodeWithSelector(AccessError.Unauthorized.selector, BOB));
         rewardsDistributor.takeSnapshot(1);
         vm.stopPrank();
     }
 
     function test_takeSnapshot_WrongPeriodId() public {
-        vm.startPrank(vm.addr(0xA11CE));
+        vm.startPrank(ALICE);
         vm.expectRevert(
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
@@ -127,10 +133,8 @@ contract SnapshotRewardsDistributorUnitTest is Test {
     }
 
     function test_onPositionUpdated_AccessError() public {
-        vm.startPrank(vm.addr(0xA11CE));
-        vm.expectRevert(
-            abi.encodeWithSelector(AccessError.Unauthorized.selector, vm.addr(0xA11CE))
-        );
+        vm.startPrank(ALICE);
+        vm.expectRevert(abi.encodeWithSelector(AccessError.Unauthorized.selector, ALICE));
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(fakeSnxToken);
@@ -140,7 +144,6 @@ contract SnapshotRewardsDistributorUnitTest is Test {
 
     function test_onPositionUpdated_WrongPool() public {
         vm.startPrank(address(rewardsManager));
-        vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 2;
         address collateralType = address(fakeSnxToken);
@@ -157,7 +160,6 @@ contract SnapshotRewardsDistributorUnitTest is Test {
 
     function test_onPositionUpdated_WrongCollateralType() public {
         vm.startPrank(address(rewardsManager));
-        vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(0xB0B);
@@ -174,11 +176,11 @@ contract SnapshotRewardsDistributorUnitTest is Test {
     }
 
     function test_onPositionUpdated() public {
-        snxAccount.mint(address(rewardsManager), 1);
-        vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(fakeSnxToken);
+
+        snxAccount.mint(BOB, accountId);
 
         assertEq(rewardsDistributor.currentPeriodId(), 0);
         rewardsManager.delegateCollateral(accountId, poolId, collateralType, 100, 1);
@@ -193,7 +195,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         );
         assertEq(amount0, 100);
         assertEq(periodId0, 0);
-        assertEq(owner0, address(rewardsManager));
+        assertEq(owner0, BOB);
 
         rewardsManager.delegateCollateral(accountId, poolId, collateralType, 9000, 1);
         vm.startPrank(address(rewardsManager));
@@ -206,11 +208,11 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         );
         assertEq(amount1, 9000);
         assertEq(periodId1, 0);
-        assertEq(owner1, address(rewardsManager));
+        assertEq(owner1, BOB);
     }
 
     function test_takeSnapshot() public {
-        vm.startPrank(vm.addr(0xA11CE));
+        vm.startPrank(ALICE);
         rewardsDistributor.takeSnapshot(1);
         vm.stopPrank();
 
@@ -218,7 +220,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         assertEq(rewardsDistributor.totalSupplyOnPeriod(0), 0);
         assertEq(rewardsDistributor.currentPeriodId(), 1);
 
-        vm.startPrank(vm.addr(0xA11CE));
+        vm.startPrank(ALICE);
         rewardsDistributor.takeSnapshot(2);
         vm.stopPrank();
 
@@ -229,13 +231,21 @@ contract SnapshotRewardsDistributorUnitTest is Test {
     }
 
     function test_onPositionUpdated_multiplePeriods() public {
-        snxAccount.mint(vm.addr(0xB0B), 1);
-        vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(fakeSnxToken);
 
-        vm.startPrank(vm.addr(0xA11CE));
+        snxAccount.mint(BOB, accountId);
+
+        assertEq(rewardsDistributor.totalSupply(), 0);
+        assertEq(rewardsDistributor.totalSupplyOnPeriod(0), 0);
+
+        assertEq(rewardsDistributor.balanceOf(accountId), 0);
+        assertEq(rewardsDistributor.balanceOf(BOB), 0);
+        assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 0), 0);
+        assertEq(rewardsDistributor.balanceOfOnPeriod(BOB, 0), 0);
+
+        vm.startPrank(ALICE);
         rewardsDistributor.takeSnapshot(1);
         vm.stopPrank();
 
@@ -243,9 +253,9 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         assertEq(rewardsDistributor.totalSupplyOnPeriod(0), 0);
 
         assertEq(rewardsDistributor.balanceOf(accountId), 0);
-        assertEq(rewardsDistributor.balanceOf(vm.addr(0xB0B)), 0);
+        assertEq(rewardsDistributor.balanceOf(BOB), 0);
         assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 0), 0);
-        assertEq(rewardsDistributor.balanceOfOnPeriod(vm.addr(0xB0B), 0), 0);
+        assertEq(rewardsDistributor.balanceOfOnPeriod(BOB, 0), 0);
 
         // for period 1 delegate 100
         rewardsManager.delegateCollateral(accountId, poolId, collateralType, 100, 1);
@@ -253,7 +263,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         rewardsDistributor.onPositionUpdated(accountId, poolId, collateralType, 123);
         vm.stopPrank();
 
-        vm.startPrank(vm.addr(0xA11CE));
+        vm.startPrank(ALICE);
         rewardsDistributor.takeSnapshot(2);
         vm.stopPrank();
 
@@ -261,9 +271,9 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         assertEq(rewardsDistributor.totalSupplyOnPeriod(1), 100);
 
         assertEq(rewardsDistributor.balanceOf(accountId), 100);
-        assertEq(rewardsDistributor.balanceOf(vm.addr(0xB0B)), 100);
+        assertEq(rewardsDistributor.balanceOf(BOB), 100);
         assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 1), 100);
-        assertEq(rewardsDistributor.balanceOfOnPeriod(vm.addr(0xB0B), 1), 100);
+        assertEq(rewardsDistributor.balanceOfOnPeriod(BOB, 1), 100);
 
         // for period 2 delegate 9000
         rewardsManager.delegateCollateral(accountId, poolId, collateralType, 9000, 1);
@@ -271,7 +281,7 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         rewardsDistributor.onPositionUpdated(accountId, poolId, collateralType, 123);
         vm.stopPrank();
 
-        vm.startPrank(vm.addr(0xA11CE));
+        vm.startPrank(ALICE);
         rewardsDistributor.takeSnapshot(3);
         vm.stopPrank();
 
@@ -279,8 +289,38 @@ contract SnapshotRewardsDistributorUnitTest is Test {
         assertEq(rewardsDistributor.totalSupplyOnPeriod(2), 9000);
 
         assertEq(rewardsDistributor.balanceOf(accountId), 9000);
-        assertEq(rewardsDistributor.balanceOf(vm.addr(0xB0B)), 9000);
+        assertEq(rewardsDistributor.balanceOf(BOB), 9000);
         assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 2), 9000);
-        assertEq(rewardsDistributor.balanceOfOnPeriod(vm.addr(0xB0B), 2), 9000);
+        assertEq(rewardsDistributor.balanceOfOnPeriod(BOB, 2), 9000);
+    }
+
+    function test_balanceOfOnPeriod_NotFound() public {
+        uint128 accountId = 1;
+        uint128 poolId = 1;
+        address collateralType = address(fakeSnxToken);
+
+        snxAccount.mint(BOB, accountId);
+
+        // One more than MAX_PERIOD_ITERATE
+        for (uint128 i = 1; i <= 31; i++) {
+            rewardsManager.delegateCollateral(accountId, poolId, collateralType, i * 100, 1);
+
+            vm.startPrank(address(rewardsManager));
+            rewardsDistributor.onPositionUpdated(accountId, poolId, collateralType, 123);
+
+            vm.startPrank(ALICE);
+            rewardsDistributor.takeSnapshot(i);
+        }
+        assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 31), 3_100);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SnapshotRewardsDistributor.NotFoundInRecentHistory.selector)
+        );
+        assertEq(rewardsDistributor.balanceOfOnPeriod(accountId, 0), 0);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SnapshotRewardsDistributor.NotFoundInRecentHistory.selector)
+        );
+        assertEq(rewardsDistributor.balanceOfOnPeriod(BOB, 0), 0);
     }
 }
