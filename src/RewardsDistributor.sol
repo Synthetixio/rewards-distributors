@@ -6,6 +6,7 @@ import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessEr
 import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
 import {ERC20Helper} from "@synthetixio/core-contracts/contracts/token/ERC20Helper.sol";
 import {IERC165} from "@synthetixio/core-contracts/contracts/interfaces/IERC165.sol";
+import {IERC20} from "@synthetixio/core-contracts/contracts/interfaces/IERC20.sol";
 import {ISynthetixCore} from "./interfaces/ISynthetixCore.sol";
 
 contract RewardsDistributor is IRewardDistributor {
@@ -70,7 +71,12 @@ contract RewardsDistributor is IRewardDistributor {
                 "Collateral does not match the rewards token"
             );
         }
-        payoutToken.safeTransfer(payoutTarget_, payoutAmount_);
+
+        // payoutAmount_ is always in 18 decimals precision, adjust actual payout amount to match payout token decimals
+        uint256 systemPrecision = 10 ** 18;
+        uint256 payoutPrecision = 10 ** IERC20(payoutToken).decimals();
+        uint256 adjustedAmount = (payoutAmount_ / systemPrecision) * payoutPrecision;
+        payoutToken.safeTransfer(payoutTarget_, adjustedAmount);
         return true;
     }
 

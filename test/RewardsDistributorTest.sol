@@ -27,6 +27,26 @@ contract SNXToken is MockERC20 {
     }
 }
 
+contract Token6Decimals is MockERC20 {
+    constructor() {
+        initialize("Token with 6 decimals", "T6D", 6);
+    }
+
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
+}
+
+contract Token33Decimals is MockERC20 {
+    constructor() {
+        initialize("Token with 33 decimals", "T33D", 33);
+    }
+
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
+}
+
 contract CoreProxyMock {
     uint128 public poolId;
     address public collateralType;
@@ -284,5 +304,59 @@ contract RewardsDistributorTest is Test {
         assertEq(rewardsDistributor.supportsInterface(type(IRewardDistributor).interfaceId), true);
         bytes4 anotherInterface = bytes4(keccak256(bytes("123")));
         assertEq(rewardsDistributor.supportsInterface(anotherInterface), false);
+    }
+
+    function test_payout_lowerDecimalsToken() public {
+        uint128 accountId = 1;
+        uint128 poolId = 1;
+        address collateralType = address(sUSDC);
+
+        Token6Decimals T6D = new Token6Decimals();
+        RewardsDistributor rd = new RewardsDistributor(
+            address(rewardsManager),
+            poolId,
+            address(sUSDC),
+            address(T6D),
+            "6 Decimals token payouts"
+        );
+        T6D.mint(address(rd), 1_000e6); // 1000 T6D tokens
+        vm.deal(address(rewardsManager), 1 ether);
+
+        assertEq(T6D.balanceOf(address(rd)), 1_000e6);
+        assertEq(T6D.balanceOf(BOB), 0);
+
+        vm.startPrank(address(rewardsManager));
+        assertTrue(rd.payout(accountId, poolId, collateralType, BOB, 10e18)); // Distribute 10 tokens, the number is in 18 dec precision
+        vm.stopPrank();
+
+        assertEq(T6D.balanceOf(address(rd)), 990e6);
+        assertEq(T6D.balanceOf(BOB), 10e6);
+    }
+
+    function test_payout_higherDecimalsToken() public {
+        uint128 accountId = 1;
+        uint128 poolId = 1;
+        address collateralType = address(sUSDC);
+
+        Token33Decimals T33D = new Token33Decimals();
+        RewardsDistributor rd = new RewardsDistributor(
+            address(rewardsManager),
+            poolId,
+            address(sUSDC),
+            address(T33D),
+            "33 Decimals token payouts"
+        );
+        T33D.mint(address(rd), 1_000e33); // 1000 T33D tokens
+        vm.deal(address(rewardsManager), 1 ether);
+
+        assertEq(T33D.balanceOf(address(rd)), 1_000e33);
+        assertEq(T33D.balanceOf(BOB), 0);
+
+        vm.startPrank(address(rewardsManager));
+        assertTrue(rd.payout(accountId, poolId, collateralType, BOB, 10e18)); // Distribute 10 tokens, the number is in 18 dec precision
+        vm.stopPrank();
+
+        assertEq(T33D.balanceOf(address(rd)), 990e33);
+        assertEq(T33D.balanceOf(BOB), 10e33);
     }
 }
