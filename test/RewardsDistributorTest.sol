@@ -11,35 +11,9 @@ import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessEr
 import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
 import {ERC20Helper} from "@synthetixio/core-contracts/contracts/token/ERC20Helper.sol";
 
-contract SynthUSDCToken is MockERC20 {
-    constructor() {
-        initialize("Synth USDC", "sUSDC", 18);
-    }
-}
-
-contract SNXToken is MockERC20 {
-    constructor() {
-        initialize("Synthetix Network Token", "SNX", 18);
-    }
-
-    function mint(address to, uint256 amount) public {
-        _mint(to, amount);
-    }
-}
-
-contract Token6Decimals is MockERC20 {
-    constructor() {
-        initialize("Token with 6 decimals", "T6D", 6);
-    }
-
-    function mint(address to, uint256 amount) public {
-        _mint(to, amount);
-    }
-}
-
-contract Token33Decimals is MockERC20 {
-    constructor() {
-        initialize("Token with 33 decimals", "T33D", 33);
+contract MintableToken is MockERC20 {
+    constructor(string memory _symbol, uint8 _decimals) {
+        initialize(string.concat("Mintable token ", _symbol), _symbol, _decimals);
     }
 
     function mint(address to, uint256 amount) public {
@@ -79,8 +53,8 @@ contract RewardsDistributorTest is Test {
     address private ALICE;
     address private BOB;
 
-    SynthUSDCToken internal sUSDC;
-    SNXToken internal SNX;
+    MintableToken internal sUSDC;
+    MintableToken internal SNX;
     RewardsDistributor internal rewardsDistributor;
     CoreProxyMock internal rewardsManager;
 
@@ -88,8 +62,8 @@ contract RewardsDistributorTest is Test {
         ALICE = vm.addr(0xA11CE);
         BOB = vm.addr(0xB0B);
 
-        SNX = new SNXToken();
-        sUSDC = new SynthUSDCToken();
+        SNX = new MintableToken("SNX", 18);
+        sUSDC = new MintableToken("sUSDC", 18);
 
         rewardsManager = new CoreProxyMock();
 
@@ -311,11 +285,11 @@ contract RewardsDistributorTest is Test {
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
 
-        Token6Decimals T6D = new Token6Decimals();
+        MintableToken T6D = new MintableToken("T6D", 6);
         RewardsDistributor rd = new RewardsDistributor(
             address(rewardsManager),
             poolId,
-            address(sUSDC),
+            collateralType,
             address(T6D),
             "6 Decimals token payouts"
         );
@@ -338,11 +312,11 @@ contract RewardsDistributorTest is Test {
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
 
-        Token33Decimals T33D = new Token33Decimals();
+        MintableToken T33D = new MintableToken("T33D", 33);
         RewardsDistributor rd = new RewardsDistributor(
             address(rewardsManager),
             poolId,
-            address(sUSDC),
+            collateralType,
             address(T33D),
             "33 Decimals token payouts"
         );
