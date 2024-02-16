@@ -2,7 +2,6 @@
 pragma solidity ^0.8.21;
 
 import {Test} from "forge-std/Test.sol";
-import {MockERC20} from "forge-std/mocks/MockERC20.sol";
 import {RewardsDistributor} from "../src/RewardsDistributor.sol";
 
 import {MintableToken} from "./MintableToken.sol";

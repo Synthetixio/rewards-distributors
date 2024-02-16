@@ -10,6 +10,8 @@ import {IERC20} from "@synthetixio/core-contracts/contracts/interfaces/IERC20.so
 import {ISynthetixCore} from "./interfaces/ISynthetixCore.sol";
 
 contract RewardsDistributor is IRewardDistributor {
+    error NotEnoughRewardsLeft(uint256 amountRequested, uint256 amountLeft);
+
     using ERC20Helper for address;
 
     address public rewardManager;
@@ -22,6 +24,8 @@ contract RewardsDistributor is IRewardDistributor {
     uint256 public constant SYSTEM_PRECISION = 10 ** 18;
 
     bool public shouldFailPayout;
+
+    uint256 public rewardsAmount = 0;
 
     constructor(
         address rewardManager_,
@@ -78,7 +82,12 @@ contract RewardsDistributor is IRewardDistributor {
 
         // payoutAmount_ is always in 18 decimals precision, adjust actual payout amount to match payout token decimals
         uint256 adjustedAmount = (payoutAmount_ * precision) / SYSTEM_PRECISION;
+
+        if (adjustedAmount > rewardsAmount) {
+            revert NotEnoughRewardsLeft(adjustedAmount, rewardsAmount);
+        }
         payoutToken.safeTransfer(payoutTarget_, adjustedAmount);
+
         return true;
     }
 
@@ -108,6 +117,8 @@ contract RewardsDistributor is IRewardDistributor {
         // amount_ is in payout token decimals precision, adjust actual distribution amount to 18 decimals that core is making its calculations in
         // this is necessary to avoid rounding issues when doing actual payouts
         uint256 adjustedAmount = (amount_ * SYSTEM_PRECISION) / precision;
+
+        rewardsAmount = rewardsAmount + adjustedAmount;
 
         ISynthetixCore(rewardManager).distributeRewards(
             poolId_,
