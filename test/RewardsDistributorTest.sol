@@ -182,8 +182,7 @@ contract RewardsDistributorTest is Test {
         SNX.mint(address(rewardsDistributor), 1000e18);
 
         uint256 amount = 100e18;
-        uint64 start = 12345678;
-        uint32 duration = 3600;
+
         vm.startPrank(BOSS);
         rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);
         vm.stopPrank();
@@ -237,7 +236,23 @@ contract RewardsDistributorTest is Test {
         vm.stopPrank();
     }
 
+    function test_distributeRewards_NotEnoughBalance() public {
+        SNX.mint(address(rewardsDistributor), 1_000e18);
+
+        uint256 amount = 2_000e18; // try distributing 2_000 SNX, while having only 1_000 on balance
+
+        vm.expectRevert(
+            abi.encodeWithSelector(RewardsDistributor.NotEnoughBalance.selector, 2_000e18, 1_000e18)
+        );
+
+        vm.startPrank(BOSS);
+        rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);
+        vm.stopPrank();
+    }
+
     function test_distributeRewards() public {
+        SNX.mint(address(rewardsDistributor), 1_000e18);
+
         uint256 amount = 100e18;
 
         vm.startPrank(BOSS);
