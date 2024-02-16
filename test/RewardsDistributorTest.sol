@@ -10,15 +10,7 @@ import {AccessError} from "@synthetixio/core-contracts/contracts/errors/AccessEr
 import {ParameterError} from "@synthetixio/core-contracts/contracts/errors/ParameterError.sol";
 import {ERC20Helper} from "@synthetixio/core-contracts/contracts/token/ERC20Helper.sol";
 
-contract MintableToken is MockERC20 {
-    constructor(string memory _symbol, uint8 _decimals) {
-        initialize(string.concat("Mintable token ", _symbol), _symbol, _decimals);
-    }
-
-    function mint(address to, uint256 amount) public {
-        _mint(to, amount);
-    }
-}
+import {MintableToken} from "./MintableToken.sol";
 
 contract CoreProxyMock {
     uint128 public poolId;

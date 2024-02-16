@@ -5,15 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "forge-std/mocks/MockERC20.sol";
 import {RewardsDistributor} from "../src/RewardsDistributor.sol";
 
-contract MintableToken is MockERC20 {
-    constructor(string memory _symbol, uint8 _decimals) {
-        initialize(string.concat("Mintable token ", _symbol), _symbol, _decimals);
-    }
-
-    function mint(address to, uint256 amount) public {
-        _mint(to, amount);
-    }
-}
+import {MintableToken} from "./MintableToken.sol";
 
 contract CoreProxyMock {
     uint256 public amount;
