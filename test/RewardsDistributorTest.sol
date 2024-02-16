@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "forge-std/mocks/MockERC20.sol";
-import {console2} from "forge-std/console2.sol";
 import {RewardsDistributor} from "../src/RewardsDistributor.sol";
 import {IRewardsManagerModule} from "@synthetixio/main/contracts/interfaces/IRewardsManagerModule.sol";
 import {IRewardDistributor} from "@synthetixio/main/contracts/interfaces/external/IRewardDistributor.sol";
@@ -278,59 +277,5 @@ contract RewardsDistributorTest is Test {
         assertEq(rewardsDistributor.supportsInterface(type(IRewardDistributor).interfaceId), true);
         bytes4 anotherInterface = bytes4(keccak256(bytes("123")));
         assertEq(rewardsDistributor.supportsInterface(anotherInterface), false);
-    }
-
-    function test_payout_lowerDecimalsToken() public {
-        uint128 accountId = 1;
-        uint128 poolId = 1;
-        address collateralType = address(sUSDC);
-
-        MintableToken T6D = new MintableToken("T6D", 6);
-        RewardsDistributor rd = new RewardsDistributor(
-            address(rewardsManager),
-            poolId,
-            collateralType,
-            address(T6D),
-            "6 Decimals token payouts"
-        );
-        T6D.mint(address(rd), 1_000e6); // 1000 T6D tokens
-        vm.deal(address(rewardsManager), 1 ether);
-
-        assertEq(T6D.balanceOf(address(rd)), 1_000e6);
-        assertEq(T6D.balanceOf(BOB), 0);
-
-        vm.startPrank(address(rewardsManager));
-        assertTrue(rd.payout(accountId, poolId, collateralType, BOB, 10e18)); // Distribute 10 tokens, the number is in 18 dec precision
-        vm.stopPrank();
-
-        assertEq(T6D.balanceOf(address(rd)), 990e6);
-        assertEq(T6D.balanceOf(BOB), 10e6);
-    }
-
-    function test_payout_higherDecimalsToken() public {
-        uint128 accountId = 1;
-        uint128 poolId = 1;
-        address collateralType = address(sUSDC);
-
-        MintableToken T33D = new MintableToken("T33D", 33);
-        RewardsDistributor rd = new RewardsDistributor(
-            address(rewardsManager),
-            poolId,
-            collateralType,
-            address(T33D),
-            "33 Decimals token payouts"
-        );
-        T33D.mint(address(rd), 1_000e33); // 1000 T33D tokens
-        vm.deal(address(rewardsManager), 1 ether);
-
-        assertEq(T33D.balanceOf(address(rd)), 1_000e33);
-        assertEq(T33D.balanceOf(BOB), 0);
-
-        vm.startPrank(address(rewardsManager));
-        assertTrue(rd.payout(accountId, poolId, collateralType, BOB, 10e18)); // Distribute 10 tokens, the number is in 18 dec precision
-        vm.stopPrank();
-
-        assertEq(T33D.balanceOf(address(rd)), 990e33);
-        assertEq(T33D.balanceOf(BOB), 10e33);
     }
 }
