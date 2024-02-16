@@ -26,7 +26,6 @@ contract CoreProxyMock {
     uint256 public amount;
     uint64 public start;
     uint32 public duration;
-
     function distributeRewards(
         uint128 poolId_,
         address collateralType_,
@@ -41,16 +40,22 @@ contract CoreProxyMock {
         duration = duration_;
     }
 
+    address public poolOwner;
     function getPoolOwner(
         uint128 // poolId_
     ) public view returns (address) {
-        return address(this);
+        return poolOwner;
+    }
+
+    constructor(address poolOwner_) {
+        poolOwner = poolOwner_;
     }
 }
 
 contract RewardsDistributorTest is Test {
     address private ALICE;
     address private BOB;
+    address private BOSS;
 
     MintableToken internal sUSDC;
     MintableToken internal SNX;
@@ -60,11 +65,12 @@ contract RewardsDistributorTest is Test {
     function setUp() public {
         ALICE = vm.addr(0xA11CE);
         BOB = vm.addr(0xB0B);
+        BOSS = vm.addr(0xB055);
 
         SNX = new MintableToken("SNX", 18);
         sUSDC = new MintableToken("sUSDC", 18);
 
-        rewardsManager = new CoreProxyMock();
+        rewardsManager = new CoreProxyMock(BOSS);
 
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
@@ -96,7 +102,7 @@ contract RewardsDistributorTest is Test {
     }
 
     function test_setShouldFailPayout() public {
-        vm.startPrank(address(rewardsManager));
+        vm.startPrank(BOSS);
         assertEq(rewardsDistributor.shouldFailPayout(), false);
         rewardsDistributor.setShouldFailPayout(true);
         assertEq(rewardsDistributor.shouldFailPayout(), true);
@@ -172,23 +178,28 @@ contract RewardsDistributorTest is Test {
 
     function test_payout_shouldFail() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
-        vm.startPrank(address(rewardsManager));
         vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
+
+        vm.startPrank(BOSS);
         rewardsDistributor.setShouldFailPayout(true);
+        vm.stopPrank();
+
+        vm.startPrank(address(rewardsManager));
         assertEq(rewardsDistributor.payout(accountId, poolId, collateralType, BOB, 10e18), false);
         vm.stopPrank();
     }
 
     function test_payout() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
-        vm.startPrank(address(rewardsManager));
         vm.deal(address(rewardsManager), 1 ether);
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
+
+        vm.startPrank(address(rewardsManager));
         assertTrue(rewardsDistributor.payout(accountId, poolId, collateralType, BOB, 10e18));
         vm.stopPrank();
     }
@@ -214,7 +225,7 @@ contract RewardsDistributorTest is Test {
         uint64 start = 12345678;
         uint32 duration = 3600;
 
-        vm.startPrank(address(rewardsManager));
+        vm.startPrank(BOSS);
         vm.deal(address(rewardsManager), 1 ether);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -234,7 +245,7 @@ contract RewardsDistributorTest is Test {
         uint64 start = 12345678;
         uint32 duration = 3600;
 
-        vm.startPrank(address(rewardsManager));
+        vm.startPrank(BOSS);
         vm.deal(address(rewardsManager), 1 ether);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -254,7 +265,7 @@ contract RewardsDistributorTest is Test {
         uint64 start = 12345678;
         uint32 duration = 3600;
 
-        vm.startPrank(address(rewardsManager));
+        vm.startPrank(BOSS);
         rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);
         vm.stopPrank();
         assertEq(rewardsManager.poolId(), poolId);
