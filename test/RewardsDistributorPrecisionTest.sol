@@ -60,7 +60,6 @@ contract RewardsDistributorPrecisionTest is Test {
             "6 Decimals token payouts"
         );
         T6D.mint(address(rd), 1_000e6); // 1000 T6D tokens
-        vm.deal(address(rewardsManager), 1 ether);
 
         assertEq(T6D.balanceOf(address(rd)), 1_000e6);
         assertEq(T6D.balanceOf(BOB), 0);
@@ -76,6 +75,14 @@ contract RewardsDistributorPrecisionTest is Test {
 
         // check that rewards manager only deals with 18 decimals
         assertEq(rewardsManager.amount(), 100e18);
+
+        uint256 fractionAmount = 0.001e6;
+
+        vm.startPrank(BOSS);
+        rd.distributeRewards(poolId, collateralType, fractionAmount, start, duration);
+        vm.stopPrank();
+
+        assertEq(rewardsManager.amount(), 0.001e18);
     }
 
     function test_distributeRewards_higherDecimalsToken() public {
@@ -88,7 +95,6 @@ contract RewardsDistributorPrecisionTest is Test {
             "33 Decimals token payouts"
         );
         T33D.mint(address(rd), 1_000e33); // 1000 T33D tokens
-        vm.deal(address(rewardsManager), 1 ether);
 
         assertEq(T33D.balanceOf(address(rd)), 1_000e33);
         assertEq(T33D.balanceOf(BOB), 0);
@@ -104,6 +110,14 @@ contract RewardsDistributorPrecisionTest is Test {
 
         // check that rewards manager only deals with 18 decimals
         assertEq(rewardsManager.amount(), 100e18);
+
+        uint256 fractionAmount = 0.001e33;
+
+        vm.startPrank(BOSS);
+        rd.distributeRewards(poolId, collateralType, fractionAmount, start, duration);
+        vm.stopPrank();
+
+        assertEq(rewardsManager.amount(), 0.001e18);
     }
 
     function test_payout_lowerDecimalsToken() public {
@@ -116,7 +130,6 @@ contract RewardsDistributorPrecisionTest is Test {
             "6 Decimals token payouts"
         );
         T6D.mint(address(rd), 1_000e6); // 1000 T6D tokens
-        vm.deal(address(rewardsManager), 1 ether);
 
         assertEq(T6D.balanceOf(address(rd)), 1_000e6);
         assertEq(T6D.balanceOf(BOB), 0);
@@ -141,7 +154,6 @@ contract RewardsDistributorPrecisionTest is Test {
             "33 Decimals token payouts"
         );
         T33D.mint(address(rd), 1_000e33); // 1000 T33D tokens
-        vm.deal(address(rewardsManager), 1 ether);
 
         assertEq(T33D.balanceOf(address(rd)), 1_000e33);
         assertEq(T33D.balanceOf(BOB), 0);

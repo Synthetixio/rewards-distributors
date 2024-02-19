@@ -117,7 +117,7 @@ contract RewardsDistributorTest is Test {
     function test_payout_WrongPool() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
         vm.startPrank(address(rewardsManager));
-        vm.deal(address(rewardsManager), 1 ether);
+
         uint128 accountId = 1;
         uint128 poolId = 2;
         address collateralType = address(sUSDC);
@@ -135,7 +135,7 @@ contract RewardsDistributorTest is Test {
     function test_payout_WrongCollateralType() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
         vm.startPrank(address(rewardsManager));
-        vm.deal(address(rewardsManager), 1 ether);
+
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(0); // wrong one
@@ -152,7 +152,7 @@ contract RewardsDistributorTest is Test {
 
     function test_payout_underflow() public {
         vm.startPrank(address(rewardsManager));
-        vm.deal(address(rewardsManager), 1 ether);
+
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
@@ -170,7 +170,7 @@ contract RewardsDistributorTest is Test {
 
     function test_payout_shouldFail() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
-        vm.deal(address(rewardsManager), 1 ether);
+
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
@@ -186,7 +186,7 @@ contract RewardsDistributorTest is Test {
 
     function test_payout() public {
         SNX.mint(address(rewardsDistributor), 1000e18);
-        vm.deal(address(rewardsManager), 1 ether);
+
         uint128 accountId = 1;
         uint128 poolId = 1;
         address collateralType = address(sUSDC);
@@ -204,7 +204,7 @@ contract RewardsDistributorTest is Test {
         uint32 duration = 3600;
 
         vm.startPrank(ALICE);
-        vm.deal(address(rewardsManager), 1 ether);
+
         vm.expectRevert(abi.encodeWithSelector(AccessError.Unauthorized.selector, ALICE));
         rewardsDistributor.distributeRewards(poolId, collateralType, amount, start, duration);
         vm.stopPrank();
@@ -218,7 +218,7 @@ contract RewardsDistributorTest is Test {
         uint32 duration = 3600;
 
         vm.startPrank(BOSS);
-        vm.deal(address(rewardsManager), 1 ether);
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,
@@ -238,7 +238,7 @@ contract RewardsDistributorTest is Test {
         uint32 duration = 3600;
 
         vm.startPrank(BOSS);
-        vm.deal(address(rewardsManager), 1 ether);
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 ParameterError.InvalidParameter.selector,

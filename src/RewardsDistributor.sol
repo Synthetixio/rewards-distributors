@@ -18,6 +18,9 @@ contract RewardsDistributor is IRewardDistributor {
     address public payoutToken;
     string public name;
 
+    uint256 public precision;
+    uint256 public SYSTEM_PRECISION = 10 ** 18;
+
     bool public shouldFailPayout;
 
     constructor(
@@ -32,6 +35,7 @@ contract RewardsDistributor is IRewardDistributor {
         collateralType = collateralType_;
         payoutToken = payoutToken_;
         name = name_;
+        precision = 10 ** IERC20(payoutToken_).decimals();
     }
 
     function token() public view returns (address) {
@@ -73,9 +77,7 @@ contract RewardsDistributor is IRewardDistributor {
         }
 
         // payoutAmount_ is always in 18 decimals precision, adjust actual payout amount to match payout token decimals
-        uint256 systemPrecision = 10 ** 18;
-        uint256 distributorPrecision = 10 ** IERC20(payoutToken).decimals();
-        uint256 adjustedAmount = (payoutAmount_ / systemPrecision) * distributorPrecision;
+        uint256 adjustedAmount = (payoutAmount_ * precision) / SYSTEM_PRECISION;
         payoutToken.safeTransfer(payoutTarget_, adjustedAmount);
         return true;
     }
@@ -105,9 +107,7 @@ contract RewardsDistributor is IRewardDistributor {
 
         // amount_ is in payout token decimals precision, adjust actual distribution amount to 18 decimals that core is making its calculations in
         // this is necessary to avoid rounding issues when doing actual payouts
-        uint256 systemPrecision = 10 ** 18;
-        uint256 distributorPrecision = 10 ** IERC20(payoutToken).decimals();
-        uint256 adjustedAmount = (amount_ / distributorPrecision) * systemPrecision;
+        uint256 adjustedAmount = (amount_ * SYSTEM_PRECISION) / precision;
 
         ISynthetixCore(rewardManager).distributeRewards(
             poolId_,
