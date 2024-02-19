@@ -41,6 +41,8 @@ contract RewardsDistributorPrecisionTest is Test {
     uint128 internal accountId = 1;
     uint128 internal poolId = 1;
     address internal collateralType;
+    uint64 internal start = 12345678;
+    uint32 internal duration = 3600;
 
     function setUp() public {
         BOB = vm.addr(0xB0B);
@@ -63,9 +65,6 @@ contract RewardsDistributorPrecisionTest is Test {
 
         assertEq(T6D.balanceOf(address(rd)), 1_000e6);
         assertEq(T6D.balanceOf(BOB), 0);
-
-        uint64 start = 12345678;
-        uint32 duration = 3600;
 
         uint256 amount = 100e6;
 
@@ -98,9 +97,6 @@ contract RewardsDistributorPrecisionTest is Test {
 
         assertEq(T33D.balanceOf(address(rd)), 1_000e33);
         assertEq(T33D.balanceOf(BOB), 0);
-
-        uint64 start = 12345678;
-        uint32 duration = 3600;
 
         uint256 amount = 100e33;
 
