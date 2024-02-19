@@ -19,7 +19,7 @@ contract RewardsDistributor is IRewardDistributor {
     string public name;
 
     uint256 public precision;
-    uint256 public SYSTEM_PRECISION = 10 ** 18;
+    uint256 public constant SYSTEM_PRECISION = 10 ** 18;
 
     bool public shouldFailPayout;
 
