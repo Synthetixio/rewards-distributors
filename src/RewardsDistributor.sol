@@ -34,6 +34,7 @@ contract RewardsDistributor is IRewardDistributor {
         uint128 poolId_,
         address collateralType_,
         address payoutToken_,
+        uint8 payoutTokenDecimals_,
         string memory name_
     ) {
         rewardManager = rewardManager_; // Synthetix CoreProxy
@@ -41,7 +42,19 @@ contract RewardsDistributor is IRewardDistributor {
         collateralType = collateralType_;
         payoutToken = payoutToken_;
         name = name_;
-        precision = 10 ** IERC20(payoutToken_).decimals();
+
+        try IERC20(payoutToken_).decimals() returns (uint8 decimals) {
+            if (payoutTokenDecimals_ != decimals) {
+                revert ParameterError.InvalidParameter(
+                    "payoutTokenDecimals",
+                    "Specified token decimals do not match actual token decimals"
+                );
+            }
+            precision = 10 ** decimals;
+        } catch {
+            // Fallback to the specified token decimals skipping the check if token does not support decimals method
+            precision = 10 ** payoutTokenDecimals_;
+        }
     }
 
     function token() public view returns (address) {
