@@ -9,9 +9,11 @@
   "scripts": {
     "cov": "forge coverage --report lcov && genhtml ./lcov.info --output-directory coverage",
     "pretty": "prettier --write ./src/**/* ./test/**/* ./*.*",
-    "pretty:check": "prettier --check ./src/**/* ./test/**/* ./*.*"
+    "pretty:check": "prettier --check ./src/**/* ./test/**/* ./*.*",
+    "build:rewards-distributor": "CANNON_REGISTRY_PRIORITY=local cannon build cannonfile.toml",
+    "publish-latest:rewards-distributor": "cannon publish synthetix-rewards-distributor --chain-id 13370 --tags latest --private-key $MAINNET_DEPLOYER_PRIVATE_KEY",
+    "publish-dev:rewards-distributor": "cannon publish synthetix-rewards-distributor --chain-id 13370 --tags dev --private-key $MAINNET_DEPLOYER_PRIVATE_KEY"
   },
-  "packageManager": "yarn@4.1.0",
   "devDependencies": {
     "@usecannon/cli": "2.11.18",
     "prettier": "^3.2.5",
@@ -52,5 +54,6 @@
     "@ethersproject/wallet": "^5.0.0",
     "@ethersproject/web": "^5.0.0",
     "@ethersproject/wordlists": "^5.0.0"
-  }
+  },
+  "packageManager": "yarn@4.1.0"
 }
