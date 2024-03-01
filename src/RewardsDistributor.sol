@@ -43,18 +43,18 @@ contract RewardsDistributor is IRewardDistributor {
         payoutToken = payoutToken_;
         name = name_;
 
-        try IERC20(payoutToken_).decimals() returns (uint8 decimals) {
-            if (payoutTokenDecimals_ != decimals) {
-                revert ParameterError.InvalidParameter(
-                    "payoutTokenDecimals",
-                    "Specified token decimals do not match actual token decimals"
-                );
-            }
-            precision = 10 ** decimals;
-        } catch {
-            // Fallback to the specified token decimals skipping the check if token does not support decimals method
-            precision = 10 ** payoutTokenDecimals_;
+        (bool success, bytes memory data) = payoutToken_.call(
+            abi.encodeWithSignature("decimals()")
+        );
+
+        if (success && data.length > 0 && abi.decode(data, (uint8)) != payoutTokenDecimals_) {
+            revert ParameterError.InvalidParameter(
+                "payoutTokenDecimals",
+                "Specified token decimals do not match actual token decimals"
+            );
         }
+        // Fallback to the specified token decimals skipping the check if token does not support decimals method
+        precision = 10 ** payoutTokenDecimals_;
     }
 
     function token() public view returns (address) {
